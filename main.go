@@ -1,11 +1,14 @@
 package main
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/imdraw"
 	"github.com/faiface/pixel/pixelgl"
+	"github.com/faiface/pixel/text"
+	"golang.org/x/image/font/basicfont"
 )
 
 type coloredRect struct {
@@ -43,7 +46,15 @@ func run() {
 	for !win.Closed() {
 		win.Clear(pixel.RGB(0, 0, 0))
 
-		append(test, time.Now())
+		test = append(test, time.Now())
+		for test[len(test)-1].Sub(test[0]).Seconds() >= 1 {
+			test = test[1:]
+		}
+		basicAtlas := text.NewAtlas(basicfont.Face7x13, text.ASCII)
+		basicTxt := text.New(pixel.V(100, 100), basicAtlas)
+
+		fmt.Fprintln(basicTxt, len(test))
+		basicTxt.Draw(win, pixel.IM)
 
 		if win.JustPressed(pixelgl.MouseButton1) {
 			mpos := win.MousePosition()
