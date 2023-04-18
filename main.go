@@ -43,28 +43,33 @@ func run() {
 	basicTxt := text.New(pixel.V(100, 100), basicAtlas)
 
 	for !win.Closed() {
+		// Blanking
 		win.Clear(pixel.RGB(0, 0, 0))
 		basicTxt.Clear()
 
+		// Logic sweep
 		frameTimes = append(frameTimes, time.Now())
 		for frameTimes[len(frameTimes)-1].Sub(frameTimes[0]).Seconds() >= 1 {
 			frameTimes = frameTimes[1:]
 		}
 
-		fmt.Fprintln(basicTxt, len(frameTimes))
-		basicTxt.Draw(win, pixel.IM)
+		mouseClicked := win.JustPressed(pixelgl.MouseButton1)
 
-		mb1 := win.JustPressed(pixelgl.MouseButton1)
-		for i, r := range rects {
-			r.Draw(win)
-			if mb1 && r.Contains(win.MousePosition()) {
-				(&ColoredRect{Bounds: pixel.R((float64)(i*10), 0, (float64(i*10) + 10), 10), Color: r.Color}).Draw(win)
+		for idx, rect := range rects {
+			rect.Draw(win)
+			if mouseClicked && rect.Contains(win.MousePosition()) {
+				(&ColoredRect{Bounds: pixel.R((float64)(idx*10), 0, (float64(idx*10) + 10), 10), Color: rect.Color}).Draw(win)
 			}
 		}
-		if mb1 {
+		if mouseClicked {
 			(&ColoredRect{Bounds: pixel.R(0, 10, 10, 20), Color: pixel.RGB(0, 1, 0)}).Draw(win)
 		}
 
+		// Draw FPS tracker
+		fmt.Fprintln(basicTxt, len(frameTimes))
+		basicTxt.Draw(win, pixel.IM)
+
+		// Send to screen!
 		win.Update()
 	}
 }
