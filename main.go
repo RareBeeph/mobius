@@ -44,13 +44,13 @@ func run() {
 
 	for !win.Closed() {
 		win.Clear(pixel.RGB(0, 0, 0))
+		basicTxt.Clear()
 
 		frameTimes = append(frameTimes, time.Now())
 		for frameTimes[len(frameTimes)-1].Sub(frameTimes[0]).Seconds() >= 1 {
 			frameTimes = frameTimes[1:]
 		}
 
-		basicTxt.Clear()
 		fmt.Fprintln(basicTxt, len(frameTimes))
 		basicTxt.Draw(win, pixel.IM)
 
