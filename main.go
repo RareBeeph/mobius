@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math/rand"
 	"time"
 
 	"github.com/faiface/pixel"
@@ -25,17 +26,20 @@ func run() {
 		panic(err)
 	}
 
-	var rects []ColoredRect = []ColoredRect{
+	controlRects := []ColoredRect{
 		{
 			Bounds: pixel.R(200, 100, 500, 300),
-			Color:  pixel.RGB(1, 0, 0),
+			Color:  chooseControlColor(),
 		},
+	}
 
+	/*var testRects []ColoredRect = []ColoredRect{
 		{
 			Bounds: pixel.R(500, 100, 600, 200),
 			Color:  pixel.RGB(0.7, 0.4, 0.2),
 		},
-	}
+	}*/
+	testRects := makeTestRects(controlRects)
 
 	var frameTimes []time.Time
 
@@ -58,12 +62,18 @@ func run() {
 
 		mouseClicked := win.JustPressed(pixelgl.MouseButton1)
 
-		for idx, rect := range rects {
+		for idx, rect := range append(controlRects, testRects...) {
 			rect.Draw(win)
 			if mouseClicked && rect.Contains(win.MousePosition()) {
-				collisionIndicator.Bounds = pixel.R((float64)(idx*10), 0, (float64(idx*10) + 10), 10)
+				// Indicate which color was clicked
+				collisionIndicator.Bounds = pixel.R(float64(idx*10), 0, float64(idx*10)+10, 10)
 				collisionIndicator.Color = rect.Color
 				collisionIndicator.Draw(win)
+
+				// Generate a new set of colors to compare
+				controlRects[0].Color = chooseControlColor()
+				chooseTestColors(controlRects[0].Color)
+				testRects = makeTestRects(controlRects)
 			}
 		}
 		if mouseClicked {
@@ -77,4 +87,30 @@ func run() {
 		// Send to screen!
 		win.Update()
 	}
+}
+
+func chooseControlColor() pixel.RGBA {
+	return pixel.RGB(rand.Float64(), rand.Float64(), rand.Float64())
+}
+
+func chooseTestColors(ctrlColor pixel.RGBA) []pixel.RGBA {
+	out := []pixel.RGBA{}
+	idx := 0
+	ctrlColor.R = pixel.Clamp(ctrlColor.R, 0.2, 0.8)
+	ctrlColor.G = pixel.Clamp(ctrlColor.G, 0.2, 0.8)
+	ctrlColor.B = pixel.Clamp(ctrlColor.B, 0.2, 0.8)
+	for idx < 5 {
+		out = append(out, pixel.RGB(ctrlColor.R+rand.Float64()*0.2, ctrlColor.G+rand.Float64()*0.2, ctrlColor.B+rand.Float64()*0.2))
+		idx++
+	}
+	return out
+}
+
+func makeTestRects(controlRects []ColoredRect) []ColoredRect {
+	var testRects []ColoredRect
+	for idx, col := range chooseTestColors(controlRects[0].Color) {
+		rect := ColoredRect{Bounds: pixel.R(500, 100+float64(idx*40), 540, 140+float64(idx*40)), Color: col}
+		testRects = append(testRects, rect)
+	}
+	return testRects
 }
