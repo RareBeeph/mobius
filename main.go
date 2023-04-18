@@ -42,6 +42,9 @@ func run() {
 	basicAtlas := text.NewAtlas(basicfont.Face7x13, text.ASCII)
 	basicTxt := text.New(pixel.V(100, 100), basicAtlas)
 
+	clickIndicator := &ColoredRect{Bounds: pixel.R(0, 10, 10, 20), Color: pixel.RGB(0, 1, 0)}
+	collisionIndicator := &ColoredRect{Bounds: pixel.R(0, 0, 10, 10), Color: pixel.RGB(0, 1, 0)}
+
 	for !win.Closed() {
 		// Blanking
 		win.Clear(pixel.RGB(0, 0, 0))
@@ -58,11 +61,13 @@ func run() {
 		for idx, rect := range rects {
 			rect.Draw(win)
 			if mouseClicked && rect.Contains(win.MousePosition()) {
-				(&ColoredRect{Bounds: pixel.R((float64)(idx*10), 0, (float64(idx*10) + 10), 10), Color: rect.Color}).Draw(win)
+				collisionIndicator.Bounds = pixel.R((float64)(idx*10), 0, (float64(idx*10) + 10), 10)
+				collisionIndicator.Color = rect.Color
+				collisionIndicator.Draw(win)
 			}
 		}
 		if mouseClicked {
-			(&ColoredRect{Bounds: pixel.R(0, 10, 10, 20), Color: pixel.RGB(0, 1, 0)}).Draw(win)
+			clickIndicator.Draw(win)
 		}
 
 		// Draw FPS tracker
