@@ -25,6 +25,8 @@ func (r *ColoredRect) Draw(window *pixelgl.Window) {
 		r.Surface = imdraw.New(nil)
 	}
 
+	r.Surface.Clear()
+
 	r.Surface.Color = r.Color
 	r.Surface.Push(r.Bounds.Min)
 	r.Surface.Push(r.Bounds.Max)
