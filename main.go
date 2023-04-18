@@ -39,8 +39,14 @@ func run() {
 	r.bounds = pixel.R(200, 100, 500, 300)
 	r.color = pixel.RGB(1, 0, 0)
 	rects = append(rects, r)
-	pushRectToImd(rects[0].bounds.Min, rects[0].bounds.Max, rects[0].color, button)
 
+	r.bounds = pixel.R(500, 100, 600, 200)
+	r.color = pixel.RGB(0.7, 0.4, 0.2)
+	rects = append(rects, r)
+
+	for _, r := range rects {
+		pushRectToImd(r.bounds.Min, r.bounds.Max, r.color, button)
+	}
 	var test []time.Time
 
 	for !win.Closed() {
@@ -58,15 +64,15 @@ func run() {
 
 		if win.JustPressed(pixelgl.MouseButton1) {
 			mpos := win.MousePosition()
-			for _, r := range rects {
+			for i, r := range rects {
 				if mpos.X >= r.bounds.Min.X && mpos.X <= r.bounds.Max.X && mpos.Y >= r.bounds.Min.Y && mpos.Y <= r.bounds.Max.Y {
 					butt := imdraw.New(nil)
-					pushRectToImd(pixel.V(0, 0), pixel.V(10, 10), pixel.RGB(1, 0, 0), butt)
+					pushRectToImd(pixel.V((float64)(i*10), 0), pixel.V((float64)(i*10+10), 10), r.color, butt)
 					butt.Draw(win)
 				}
 			}
 			butt2 := imdraw.New(nil)
-			pushRectToImd(pixel.V(10, 0), pixel.V(20, 10), pixel.RGB(0, 1, 0), butt2)
+			pushRectToImd(pixel.V(0, 10), pixel.V(10, 20), pixel.RGB(0, 1, 0), butt2)
 			butt2.Draw(win)
 		}
 
