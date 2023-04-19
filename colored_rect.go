@@ -14,9 +14,9 @@ type ColoredRect struct {
 
 func (r *ColoredRect) Contains(point pixel.Vec) bool {
 	return (point.X >= r.Bounds.Min.X &&
-		point.X <= r.Bounds.Max.X &&
+		point.X < r.Bounds.Max.X &&
 		point.Y >= r.Bounds.Min.Y &&
-		point.Y <= r.Bounds.Max.Y)
+		point.Y < r.Bounds.Max.Y)
 }
 
 func (r *ColoredRect) Draw(window *pixelgl.Window) {
