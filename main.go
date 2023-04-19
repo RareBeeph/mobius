@@ -26,6 +26,8 @@ func run() {
 		panic(err)
 	}
 
+	rand.Seed(time.Now().UnixMicro())
+
 	controlRects := []ColoredRect{
 		{
 			Bounds: pixel.R(200, 100, 500, 300),
@@ -99,7 +101,6 @@ func run() {
 }
 
 func chooseControlColor() pixel.RGBA {
-	rand.Seed(time.Now().UnixMicro())
 	return pixel.RGB(rand.Float64(), rand.Float64(), rand.Float64())
 }
 
