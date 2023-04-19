@@ -104,22 +104,12 @@ func chooseControlColor() pixel.RGBA {
 	return pixel.RGB(rand.Float64(), rand.Float64(), rand.Float64())
 }
 
-/*func chooseTestColors(ctrlColor pixel.RGBA) []pixel.RGBA {
-	out := []pixel.RGBA{}
-	idx := 0
-	ctrlColor.R = pixel.Clamp(ctrlColor.R, 0.2, 0.8)
-	ctrlColor.G = pixel.Clamp(ctrlColor.G, 0.2, 0.8)
-	ctrlColor.B = pixel.Clamp(ctrlColor.B, 0.2, 0.8)
-	for idx < 5 {
-		out = append(out, pixel.RGB(ctrlColor.R+rand.Float64()*0.2, ctrlColor.G+rand.Float64()*0.2, ctrlColor.B+rand.Float64()*0.2))
-		idx++
-	}
-	return out
-}*/
+func firstChooseTestColors(inColor pixel.RGBA, depth int, step int, ctc []pixel.RGBA) (out []pixel.RGBA) {
+	// When this is initially called by makeTestRects, it will be centered on 0.5 gray.
 
-func firstChooseTestColors(inColor pixel.RGBA, depth int, step int, ctc []pixel.RGBA) []pixel.RGBA {
-	out := []pixel.RGBA{}
 	if step < 4 {
+		// Over the course of 4 steps, this will generate all 8 colors at a given distance from the input color.
+		// The offset will start out as 0.25 and cut in half every depth increment.
 		offset := 1 / (float64(int(4) << depth))
 		out = append(out, pixel.RGB(inColor.R-offset, inColor.G-offset, inColor.B-offset))
 
@@ -132,20 +122,23 @@ func firstChooseTestColors(inColor pixel.RGBA, depth int, step int, ctc []pixel.
 		out = append(out, out[0])
 		out[1].B += 2 * offset
 	} else if step == 4 {
+		// Semifinals round 1
 		out = append(out, ctc[0], ctc[1])
 	} else if step == 5 {
+		// Semifinals round 2
 		out = append(out, ctc[2], ctc[3])
 	} else if step == 6 {
+		// Finals
 		out = append(out, ctc[4], ctc[5])
 	} else {
+		// Recurse with incremented depth, centered on the winner of the tournament.
 		out = firstChooseTestColors(ctc[6], depth+1, step-7, ctc[6:])
 	}
 
 	return out
 }
 
-func makeTestRects(controlRects []ColoredRect, depth int, step int, ctc []pixel.RGBA) []ColoredRect {
-	var testRects []ColoredRect
+func makeTestRects(controlRects []ColoredRect, depth int, step int, ctc []pixel.RGBA) (testRects []ColoredRect) {
 	for idx, col := range firstChooseTestColors(pixel.RGB(0.5, 0.5, 0.5), depth, step, ctc) {
 		rect := ColoredRect{Bounds: pixel.R(500, 100+float64(idx*100), 600, 200+float64(idx*100)), Color: col}
 		testRects = append(testRects, rect)
