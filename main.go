@@ -93,6 +93,8 @@ func run() {
 
 		// Draw FPS tracker
 		fmt.Fprintln(basicTxt, len(frameTimes))
+		fmt.Fprint(basicTxt, "Step ")
+		fmt.Fprintln(basicTxt, step%7)
 		basicTxt.Draw(win, pixel.IM)
 
 		// Send to screen!
@@ -132,7 +134,7 @@ func firstChooseTestColors(inColor pixel.RGBA, depth int, step int, ctc []pixel.
 		out = append(out, ctc[4], ctc[5])
 	} else {
 		// Recurse with incremented depth, centered on the winner of the tournament.
-		out = firstChooseTestColors(ctc[6], depth+1, step-7, ctc[6:])
+		out = firstChooseTestColors(ctc[6], depth+1, step-7, ctc[7:])
 	}
 
 	return out
