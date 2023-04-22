@@ -8,6 +8,7 @@ require (
 	gorm.io/driver/sqlite v1.5.0
 	gorm.io/gen v0.3.22
 	gorm.io/gorm v1.25.0
+	gorm.io/plugin/dbresolver v1.4.1
 )
 
 require (
@@ -27,5 +28,4 @@ require (
 	gorm.io/datatypes v1.2.0 // indirect
 	gorm.io/driver/mysql v1.5.0 // indirect
 	gorm.io/hints v1.1.1 // indirect
-	gorm.io/plugin/dbresolver v1.4.1 // indirect
 )

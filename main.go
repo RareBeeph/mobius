@@ -1,7 +1,10 @@
 package main
 
 import (
+	"colorspacer/model"
+	"colorspacer/query"
 	"fmt"
+	"log"
 	"math/rand"
 	"time"
 
@@ -9,6 +12,8 @@ import (
 	"github.com/faiface/pixel/pixelgl"
 	"github.com/faiface/pixel/text"
 	"golang.org/x/image/font/basicfont"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
 )
 
 func main() {
@@ -26,6 +31,10 @@ func run() {
 		panic(err)
 	}
 
+	db, _ := gorm.Open(sqlite.Open("data.db"), &gorm.Config{})
+	db.AutoMigrate(&model.Midpoint{})
+	q := query.Use(db)
+
 	rand.Seed(time.Now().UnixMicro())
 
 	controlRects := []ColoredRect{
@@ -39,15 +48,14 @@ func run() {
 		},
 	}
 
-	/*var testRects []ColoredRect = []ColoredRect{
-		{
-			Bounds: pixel.R(500, 100, 600, 200),
-			Color:  pixel.RGB(0.7, 0.4, 0.2),
-		},
-	}*/
 	depth := 0
 	step := 0
 	testRects := makeTestRects(controlRects, depth, step, []pixel.RGBA{})
+
+	saveButton := ColoredRect{
+		Bounds: pixel.R(400, 400, 700, 600),
+		Color:  pixel.RGB(0.8, 0.8, 0.8),
+	}
 
 	var frameTimes []time.Time
 
@@ -91,8 +99,32 @@ func run() {
 			clickIndicator.Draw(win)
 		}
 
+		// Save button
+		saveButton.Draw(win)
+		if mouseClicked && saveButton.Contains(win.MousePosition()) && len(chosenTestColors) > 0 {
+			a := model.Midpoint{
+				StartpointR: controlRects[0].Color.R,
+				StartpointG: controlRects[0].Color.G,
+				StartpointB: controlRects[0].Color.B,
+				EndpointR:   controlRects[1].Color.R,
+				EndpointG:   controlRects[1].Color.G,
+				EndpointB:   controlRects[1].Color.B,
+				MidpointR:   chosenTestColors[len(chosenTestColors)-1].R,
+				MidpointG:   chosenTestColors[len(chosenTestColors)-1].G,
+				MidpointB:   chosenTestColors[len(chosenTestColors)-1].B,
+			}
+			q.Midpoint.Save(&a)
+
+			//Debug
+			b, _ := q.Midpoint.Last()
+			log.Printf("R: %f, G: %f, B: %f", b.MidpointR, b.MidpointG, b.MidpointB)
+		}
+
 		// Draw FPS tracker
 		fmt.Fprintln(basicTxt, len(frameTimes))
+
+		// Draw step counter
+		// TODO: actually use formatting
 		fmt.Fprint(basicTxt, "Step ")
 		fmt.Fprintln(basicTxt, step%7)
 		basicTxt.Draw(win, pixel.IM)
