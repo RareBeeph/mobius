@@ -12,8 +12,6 @@ import (
 	"github.com/faiface/pixel/pixelgl"
 	"github.com/faiface/pixel/text"
 	"golang.org/x/image/font/basicfont"
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
 )
 
 func main() {
@@ -31,9 +29,8 @@ func run() {
 		panic(err)
 	}
 
-	db, _ := gorm.Open(sqlite.Open("data.db"), &gorm.Config{})
-	db.AutoMigrate(&model.Midpoint{})
-	q := query.Use(db)
+	/* q := query.Use(db.Connection)
+	db.Connection.AutoMigrate(model.Midpoint{}) */
 
 	rand.Seed(time.Now().UnixMicro())
 
@@ -113,10 +110,12 @@ func run() {
 				MidpointG:   chosenTestColors[len(chosenTestColors)-1].G,
 				MidpointB:   chosenTestColors[len(chosenTestColors)-1].B,
 			}
-			q.Midpoint.Save(&a)
+			m := query.Midpoint
+			err := m.Save(&a) // segfaults
+			log.Println(err)
 
 			//Debug
-			b, _ := q.Midpoint.Last()
+			b, _ := m.Last()
 			log.Printf("R: %f, G: %f, B: %f", b.MidpointR, b.MidpointG, b.MidpointB)
 		}
 

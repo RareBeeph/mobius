@@ -1,12 +1,9 @@
 package main
 
 import (
-	"os"
-
-	"gorm.io/driver/sqlite"
 	"gorm.io/gen"
-	"gorm.io/gorm"
 
+	"colorspacer/db"
 	"colorspacer/model"
 )
 
@@ -16,16 +13,11 @@ func main() {
 		Mode:    gen.WithoutContext | gen.WithDefaultQuery | gen.WithQueryInterface, // generate mode
 	})
 
-	db_path := os.Getenv("DB_PATH")
-	if db_path == "" {
-		db_path = "data.db"
-	}
-
-	gormdb, _ := gorm.Open(sqlite.Open(db_path))
-	g.UseDB(gormdb)
+	g.UseDB(db.Connection)
 
 	// Generate basic type-safe DAO API for struct `model.User` following conventions
 	g.ApplyBasic(model.Midpoint{})
+	db.Connection.AutoMigrate(model.Midpoint{})
 
 	// Generate the code
 	g.Execute()

@@ -31,6 +31,15 @@ func newMidpoint(db *gorm.DB, opts ...gen.DOOption) midpoint {
 	_midpoint.CreatedAt = field.NewTime(tableName, "created_at")
 	_midpoint.UpdatedAt = field.NewTime(tableName, "updated_at")
 	_midpoint.DeletedAt = field.NewField(tableName, "deleted_at")
+	_midpoint.StartpointR = field.NewFloat64(tableName, "startpoint_r")
+	_midpoint.StartpointG = field.NewFloat64(tableName, "startpoint_g")
+	_midpoint.StartpointB = field.NewFloat64(tableName, "startpoint_b")
+	_midpoint.EndpointR = field.NewFloat64(tableName, "endpoint_r")
+	_midpoint.EndpointG = field.NewFloat64(tableName, "endpoint_g")
+	_midpoint.EndpointB = field.NewFloat64(tableName, "endpoint_b")
+	_midpoint.MidpointR = field.NewFloat64(tableName, "midpoint_r")
+	_midpoint.MidpointG = field.NewFloat64(tableName, "midpoint_g")
+	_midpoint.MidpointB = field.NewFloat64(tableName, "midpoint_b")
 
 	_midpoint.fillFieldMap()
 
@@ -40,11 +49,20 @@ func newMidpoint(db *gorm.DB, opts ...gen.DOOption) midpoint {
 type midpoint struct {
 	midpointDo
 
-	ALL       field.Asterisk
-	ID        field.Uint
-	CreatedAt field.Time
-	UpdatedAt field.Time
-	DeletedAt field.Field
+	ALL         field.Asterisk
+	ID          field.Uint
+	CreatedAt   field.Time
+	UpdatedAt   field.Time
+	DeletedAt   field.Field
+	StartpointR field.Float64
+	StartpointG field.Float64
+	StartpointB field.Float64
+	EndpointR   field.Float64
+	EndpointG   field.Float64
+	EndpointB   field.Float64
+	MidpointR   field.Float64
+	MidpointG   field.Float64
+	MidpointB   field.Float64
 
 	fieldMap map[string]field.Expr
 }
@@ -65,6 +83,15 @@ func (m *midpoint) updateTableName(table string) *midpoint {
 	m.CreatedAt = field.NewTime(table, "created_at")
 	m.UpdatedAt = field.NewTime(table, "updated_at")
 	m.DeletedAt = field.NewField(table, "deleted_at")
+	m.StartpointR = field.NewFloat64(table, "startpoint_r")
+	m.StartpointG = field.NewFloat64(table, "startpoint_g")
+	m.StartpointB = field.NewFloat64(table, "startpoint_b")
+	m.EndpointR = field.NewFloat64(table, "endpoint_r")
+	m.EndpointG = field.NewFloat64(table, "endpoint_g")
+	m.EndpointB = field.NewFloat64(table, "endpoint_b")
+	m.MidpointR = field.NewFloat64(table, "midpoint_r")
+	m.MidpointG = field.NewFloat64(table, "midpoint_g")
+	m.MidpointB = field.NewFloat64(table, "midpoint_b")
 
 	m.fillFieldMap()
 
@@ -81,11 +108,20 @@ func (m *midpoint) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 }
 
 func (m *midpoint) fillFieldMap() {
-	m.fieldMap = make(map[string]field.Expr, 4)
+	m.fieldMap = make(map[string]field.Expr, 13)
 	m.fieldMap["id"] = m.ID
 	m.fieldMap["created_at"] = m.CreatedAt
 	m.fieldMap["updated_at"] = m.UpdatedAt
 	m.fieldMap["deleted_at"] = m.DeletedAt
+	m.fieldMap["startpoint_r"] = m.StartpointR
+	m.fieldMap["startpoint_g"] = m.StartpointG
+	m.fieldMap["startpoint_b"] = m.StartpointB
+	m.fieldMap["endpoint_r"] = m.EndpointR
+	m.fieldMap["endpoint_g"] = m.EndpointG
+	m.fieldMap["endpoint_b"] = m.EndpointB
+	m.fieldMap["midpoint_r"] = m.MidpointR
+	m.fieldMap["midpoint_g"] = m.MidpointG
+	m.fieldMap["midpoint_b"] = m.MidpointB
 }
 
 func (m midpoint) clone(db *gorm.DB) midpoint {
