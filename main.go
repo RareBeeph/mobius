@@ -1,6 +1,7 @@
 package main
 
 import (
+	"colorspacer/db"
 	"colorspacer/model"
 	"colorspacer/query"
 	"fmt"
@@ -13,6 +14,11 @@ import (
 	"github.com/faiface/pixel/text"
 	"golang.org/x/image/font/basicfont"
 )
+
+func init() {
+	query.SetDefault(db.Connection)
+	db.Connection.AutoMigrate(model.Midpoint{})
+}
 
 func main() {
 	pixelgl.Run(run)
@@ -111,7 +117,7 @@ func run() {
 				MidpointB:   chosenTestColors[len(chosenTestColors)-1].B,
 			}
 			m := query.Midpoint
-			err := m.Save(&a) // segfaults
+			err := m.Create(&a) // segfaults
 			log.Println(err)
 
 			//Debug
