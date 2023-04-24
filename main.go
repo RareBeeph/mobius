@@ -17,7 +17,7 @@ import (
 
 func init() {
 	query.SetDefault(db.Connection)
-	db.Connection.AutoMigrate(model.Midpoint{})
+	db.Connection.AutoMigrate(model.AllModels...)
 }
 
 func main() {
@@ -35,8 +35,7 @@ func run() {
 		panic(err)
 	}
 
-	/* q := query.Use(db.Connection)
-	db.Connection.AutoMigrate(model.Midpoint{}) */
+	m := query.Midpoint
 
 	rand.Seed(time.Now().UnixMicro())
 
@@ -105,24 +104,19 @@ func run() {
 		// Save button
 		saveButton.Draw(win)
 		if mouseClicked && saveButton.Contains(win.MousePosition()) && len(chosenTestColors) > 0 {
+			start := model.RgbaToColor(controlRects[0].Color)
+			end := model.RgbaToColor(controlRects[1].Color)
+			mid := model.RgbaToColor(chosenTestColors[len(chosenTestColors)-1])
 			a := model.Midpoint{
-				StartpointR: controlRects[0].Color.R,
-				StartpointG: controlRects[0].Color.G,
-				StartpointB: controlRects[0].Color.B,
-				EndpointR:   controlRects[1].Color.R,
-				EndpointG:   controlRects[1].Color.G,
-				EndpointB:   controlRects[1].Color.B,
-				MidpointR:   chosenTestColors[len(chosenTestColors)-1].R,
-				MidpointG:   chosenTestColors[len(chosenTestColors)-1].G,
-				MidpointB:   chosenTestColors[len(chosenTestColors)-1].B,
+				Startpoint: start,
+				Endpoint:   end,
+				Midpoint:   mid,
 			}
-			m := query.Midpoint
-			err := m.Create(&a) // segfaults
-			log.Println(err)
+			m.Create(&a)
 
 			//Debug
-			b, _ := m.Last()
-			log.Printf("R: %f, G: %f, B: %f", b.MidpointR, b.MidpointG, b.MidpointB)
+			b, _ := m.Preload(m.Midpoint).Last()
+			log.Printf("ID: %d, R: %f, G: %f, B: %f", b.Midpoint.ID, b.Midpoint.R, b.Midpoint.G, b.Midpoint.B)
 		}
 
 		// Draw FPS tracker
@@ -149,7 +143,7 @@ func firstChooseTestColors(inColor pixel.RGBA, depth int, step int, ctc []pixel.
 	if step < 4 {
 		// Over the course of 4 steps, this will generate all 8 colors at a given distance from the input color.
 		// The offset will start out as 0.25 and cut in half every depth increment.
-		offset := 1 / (float64(int(4) << depth))
+		offset := 1 / (float64(int(3) << depth))
 		out = append(out, pixel.RGB(inColor.R-offset, inColor.G-offset, inColor.B-offset))
 
 		if step&1 == 1 {

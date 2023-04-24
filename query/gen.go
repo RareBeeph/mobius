@@ -17,17 +17,20 @@ import (
 
 var (
 	Q        = new(Query)
+	Color    *color
 	Midpoint *midpoint
 )
 
 func SetDefault(db *gorm.DB, opts ...gen.DOOption) {
 	*Q = *Use(db, opts...)
+	Color = &Q.Color
 	Midpoint = &Q.Midpoint
 }
 
 func Use(db *gorm.DB, opts ...gen.DOOption) *Query {
 	return &Query{
 		db:       db,
+		Color:    newColor(db, opts...),
 		Midpoint: newMidpoint(db, opts...),
 	}
 }
@@ -35,6 +38,7 @@ func Use(db *gorm.DB, opts ...gen.DOOption) *Query {
 type Query struct {
 	db *gorm.DB
 
+	Color    color
 	Midpoint midpoint
 }
 
@@ -43,6 +47,7 @@ func (q *Query) Available() bool { return q.db != nil }
 func (q *Query) clone(db *gorm.DB) *Query {
 	return &Query{
 		db:       db,
+		Color:    q.Color.clone(db),
 		Midpoint: q.Midpoint.clone(db),
 	}
 }
@@ -58,16 +63,19 @@ func (q *Query) WriteDB() *Query {
 func (q *Query) ReplaceDB(db *gorm.DB) *Query {
 	return &Query{
 		db:       db,
+		Color:    q.Color.replaceDB(db),
 		Midpoint: q.Midpoint.replaceDB(db),
 	}
 }
 
 type queryCtx struct {
+	Color    IColorDo
 	Midpoint IMidpointDo
 }
 
 func (q *Query) WithContext(ctx context.Context) *queryCtx {
 	return &queryCtx{
+		Color:    q.Color.WithContext(ctx),
 		Midpoint: q.Midpoint.WithContext(ctx),
 	}
 }

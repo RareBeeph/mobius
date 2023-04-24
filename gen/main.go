@@ -16,8 +16,7 @@ func main() {
 	g.UseDB(db.Connection)
 
 	// Generate basic type-safe DAO API for struct `model.User` following conventions
-	g.ApplyBasic(model.Midpoint{})
-	db.Connection.AutoMigrate(model.Midpoint{})
+	g.ApplyBasic(model.AllModels...)
 
 	// Generate the code
 	g.Execute()

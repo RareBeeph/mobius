@@ -31,15 +31,26 @@ func newMidpoint(db *gorm.DB, opts ...gen.DOOption) midpoint {
 	_midpoint.CreatedAt = field.NewTime(tableName, "created_at")
 	_midpoint.UpdatedAt = field.NewTime(tableName, "updated_at")
 	_midpoint.DeletedAt = field.NewField(tableName, "deleted_at")
-	_midpoint.StartpointR = field.NewFloat64(tableName, "startpoint_r")
-	_midpoint.StartpointG = field.NewFloat64(tableName, "startpoint_g")
-	_midpoint.StartpointB = field.NewFloat64(tableName, "startpoint_b")
-	_midpoint.EndpointR = field.NewFloat64(tableName, "endpoint_r")
-	_midpoint.EndpointG = field.NewFloat64(tableName, "endpoint_g")
-	_midpoint.EndpointB = field.NewFloat64(tableName, "endpoint_b")
-	_midpoint.MidpointR = field.NewFloat64(tableName, "midpoint_r")
-	_midpoint.MidpointG = field.NewFloat64(tableName, "midpoint_g")
-	_midpoint.MidpointB = field.NewFloat64(tableName, "midpoint_b")
+	_midpoint.StartpointID = field.NewInt(tableName, "startpoint_id")
+	_midpoint.MidpointID = field.NewInt(tableName, "midpoint_id")
+	_midpoint.EndpointID = field.NewInt(tableName, "endpoint_id")
+	_midpoint.Startpoint = midpointBelongsToStartpoint{
+		db: db.Session(&gorm.Session{}),
+
+		RelationField: field.NewRelation("Startpoint", "model.Color"),
+	}
+
+	_midpoint.Midpoint = midpointBelongsToMidpoint{
+		db: db.Session(&gorm.Session{}),
+
+		RelationField: field.NewRelation("Midpoint", "model.Color"),
+	}
+
+	_midpoint.Endpoint = midpointBelongsToEndpoint{
+		db: db.Session(&gorm.Session{}),
+
+		RelationField: field.NewRelation("Endpoint", "model.Color"),
+	}
 
 	_midpoint.fillFieldMap()
 
@@ -49,20 +60,19 @@ func newMidpoint(db *gorm.DB, opts ...gen.DOOption) midpoint {
 type midpoint struct {
 	midpointDo
 
-	ALL         field.Asterisk
-	ID          field.Uint
-	CreatedAt   field.Time
-	UpdatedAt   field.Time
-	DeletedAt   field.Field
-	StartpointR field.Float64
-	StartpointG field.Float64
-	StartpointB field.Float64
-	EndpointR   field.Float64
-	EndpointG   field.Float64
-	EndpointB   field.Float64
-	MidpointR   field.Float64
-	MidpointG   field.Float64
-	MidpointB   field.Float64
+	ALL          field.Asterisk
+	ID           field.Uint
+	CreatedAt    field.Time
+	UpdatedAt    field.Time
+	DeletedAt    field.Field
+	StartpointID field.Int
+	MidpointID   field.Int
+	EndpointID   field.Int
+	Startpoint   midpointBelongsToStartpoint
+
+	Midpoint midpointBelongsToMidpoint
+
+	Endpoint midpointBelongsToEndpoint
 
 	fieldMap map[string]field.Expr
 }
@@ -83,15 +93,9 @@ func (m *midpoint) updateTableName(table string) *midpoint {
 	m.CreatedAt = field.NewTime(table, "created_at")
 	m.UpdatedAt = field.NewTime(table, "updated_at")
 	m.DeletedAt = field.NewField(table, "deleted_at")
-	m.StartpointR = field.NewFloat64(table, "startpoint_r")
-	m.StartpointG = field.NewFloat64(table, "startpoint_g")
-	m.StartpointB = field.NewFloat64(table, "startpoint_b")
-	m.EndpointR = field.NewFloat64(table, "endpoint_r")
-	m.EndpointG = field.NewFloat64(table, "endpoint_g")
-	m.EndpointB = field.NewFloat64(table, "endpoint_b")
-	m.MidpointR = field.NewFloat64(table, "midpoint_r")
-	m.MidpointG = field.NewFloat64(table, "midpoint_g")
-	m.MidpointB = field.NewFloat64(table, "midpoint_b")
+	m.StartpointID = field.NewInt(table, "startpoint_id")
+	m.MidpointID = field.NewInt(table, "midpoint_id")
+	m.EndpointID = field.NewInt(table, "endpoint_id")
 
 	m.fillFieldMap()
 
@@ -108,20 +112,15 @@ func (m *midpoint) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 }
 
 func (m *midpoint) fillFieldMap() {
-	m.fieldMap = make(map[string]field.Expr, 13)
+	m.fieldMap = make(map[string]field.Expr, 10)
 	m.fieldMap["id"] = m.ID
 	m.fieldMap["created_at"] = m.CreatedAt
 	m.fieldMap["updated_at"] = m.UpdatedAt
 	m.fieldMap["deleted_at"] = m.DeletedAt
-	m.fieldMap["startpoint_r"] = m.StartpointR
-	m.fieldMap["startpoint_g"] = m.StartpointG
-	m.fieldMap["startpoint_b"] = m.StartpointB
-	m.fieldMap["endpoint_r"] = m.EndpointR
-	m.fieldMap["endpoint_g"] = m.EndpointG
-	m.fieldMap["endpoint_b"] = m.EndpointB
-	m.fieldMap["midpoint_r"] = m.MidpointR
-	m.fieldMap["midpoint_g"] = m.MidpointG
-	m.fieldMap["midpoint_b"] = m.MidpointB
+	m.fieldMap["startpoint_id"] = m.StartpointID
+	m.fieldMap["midpoint_id"] = m.MidpointID
+	m.fieldMap["endpoint_id"] = m.EndpointID
+
 }
 
 func (m midpoint) clone(db *gorm.DB) midpoint {
@@ -132,6 +131,219 @@ func (m midpoint) clone(db *gorm.DB) midpoint {
 func (m midpoint) replaceDB(db *gorm.DB) midpoint {
 	m.midpointDo.ReplaceDB(db)
 	return m
+}
+
+type midpointBelongsToStartpoint struct {
+	db *gorm.DB
+
+	field.RelationField
+}
+
+func (a midpointBelongsToStartpoint) Where(conds ...field.Expr) *midpointBelongsToStartpoint {
+	if len(conds) == 0 {
+		return &a
+	}
+
+	exprs := make([]clause.Expression, 0, len(conds))
+	for _, cond := range conds {
+		exprs = append(exprs, cond.BeCond().(clause.Expression))
+	}
+	a.db = a.db.Clauses(clause.Where{Exprs: exprs})
+	return &a
+}
+
+func (a midpointBelongsToStartpoint) WithContext(ctx context.Context) *midpointBelongsToStartpoint {
+	a.db = a.db.WithContext(ctx)
+	return &a
+}
+
+func (a midpointBelongsToStartpoint) Session(session *gorm.Session) *midpointBelongsToStartpoint {
+	a.db = a.db.Session(session)
+	return &a
+}
+
+func (a midpointBelongsToStartpoint) Model(m *model.Midpoint) *midpointBelongsToStartpointTx {
+	return &midpointBelongsToStartpointTx{a.db.Model(m).Association(a.Name())}
+}
+
+type midpointBelongsToStartpointTx struct{ tx *gorm.Association }
+
+func (a midpointBelongsToStartpointTx) Find() (result *model.Color, err error) {
+	return result, a.tx.Find(&result)
+}
+
+func (a midpointBelongsToStartpointTx) Append(values ...*model.Color) (err error) {
+	targetValues := make([]interface{}, len(values))
+	for i, v := range values {
+		targetValues[i] = v
+	}
+	return a.tx.Append(targetValues...)
+}
+
+func (a midpointBelongsToStartpointTx) Replace(values ...*model.Color) (err error) {
+	targetValues := make([]interface{}, len(values))
+	for i, v := range values {
+		targetValues[i] = v
+	}
+	return a.tx.Replace(targetValues...)
+}
+
+func (a midpointBelongsToStartpointTx) Delete(values ...*model.Color) (err error) {
+	targetValues := make([]interface{}, len(values))
+	for i, v := range values {
+		targetValues[i] = v
+	}
+	return a.tx.Delete(targetValues...)
+}
+
+func (a midpointBelongsToStartpointTx) Clear() error {
+	return a.tx.Clear()
+}
+
+func (a midpointBelongsToStartpointTx) Count() int64 {
+	return a.tx.Count()
+}
+
+type midpointBelongsToMidpoint struct {
+	db *gorm.DB
+
+	field.RelationField
+}
+
+func (a midpointBelongsToMidpoint) Where(conds ...field.Expr) *midpointBelongsToMidpoint {
+	if len(conds) == 0 {
+		return &a
+	}
+
+	exprs := make([]clause.Expression, 0, len(conds))
+	for _, cond := range conds {
+		exprs = append(exprs, cond.BeCond().(clause.Expression))
+	}
+	a.db = a.db.Clauses(clause.Where{Exprs: exprs})
+	return &a
+}
+
+func (a midpointBelongsToMidpoint) WithContext(ctx context.Context) *midpointBelongsToMidpoint {
+	a.db = a.db.WithContext(ctx)
+	return &a
+}
+
+func (a midpointBelongsToMidpoint) Session(session *gorm.Session) *midpointBelongsToMidpoint {
+	a.db = a.db.Session(session)
+	return &a
+}
+
+func (a midpointBelongsToMidpoint) Model(m *model.Midpoint) *midpointBelongsToMidpointTx {
+	return &midpointBelongsToMidpointTx{a.db.Model(m).Association(a.Name())}
+}
+
+type midpointBelongsToMidpointTx struct{ tx *gorm.Association }
+
+func (a midpointBelongsToMidpointTx) Find() (result *model.Color, err error) {
+	return result, a.tx.Find(&result)
+}
+
+func (a midpointBelongsToMidpointTx) Append(values ...*model.Color) (err error) {
+	targetValues := make([]interface{}, len(values))
+	for i, v := range values {
+		targetValues[i] = v
+	}
+	return a.tx.Append(targetValues...)
+}
+
+func (a midpointBelongsToMidpointTx) Replace(values ...*model.Color) (err error) {
+	targetValues := make([]interface{}, len(values))
+	for i, v := range values {
+		targetValues[i] = v
+	}
+	return a.tx.Replace(targetValues...)
+}
+
+func (a midpointBelongsToMidpointTx) Delete(values ...*model.Color) (err error) {
+	targetValues := make([]interface{}, len(values))
+	for i, v := range values {
+		targetValues[i] = v
+	}
+	return a.tx.Delete(targetValues...)
+}
+
+func (a midpointBelongsToMidpointTx) Clear() error {
+	return a.tx.Clear()
+}
+
+func (a midpointBelongsToMidpointTx) Count() int64 {
+	return a.tx.Count()
+}
+
+type midpointBelongsToEndpoint struct {
+	db *gorm.DB
+
+	field.RelationField
+}
+
+func (a midpointBelongsToEndpoint) Where(conds ...field.Expr) *midpointBelongsToEndpoint {
+	if len(conds) == 0 {
+		return &a
+	}
+
+	exprs := make([]clause.Expression, 0, len(conds))
+	for _, cond := range conds {
+		exprs = append(exprs, cond.BeCond().(clause.Expression))
+	}
+	a.db = a.db.Clauses(clause.Where{Exprs: exprs})
+	return &a
+}
+
+func (a midpointBelongsToEndpoint) WithContext(ctx context.Context) *midpointBelongsToEndpoint {
+	a.db = a.db.WithContext(ctx)
+	return &a
+}
+
+func (a midpointBelongsToEndpoint) Session(session *gorm.Session) *midpointBelongsToEndpoint {
+	a.db = a.db.Session(session)
+	return &a
+}
+
+func (a midpointBelongsToEndpoint) Model(m *model.Midpoint) *midpointBelongsToEndpointTx {
+	return &midpointBelongsToEndpointTx{a.db.Model(m).Association(a.Name())}
+}
+
+type midpointBelongsToEndpointTx struct{ tx *gorm.Association }
+
+func (a midpointBelongsToEndpointTx) Find() (result *model.Color, err error) {
+	return result, a.tx.Find(&result)
+}
+
+func (a midpointBelongsToEndpointTx) Append(values ...*model.Color) (err error) {
+	targetValues := make([]interface{}, len(values))
+	for i, v := range values {
+		targetValues[i] = v
+	}
+	return a.tx.Append(targetValues...)
+}
+
+func (a midpointBelongsToEndpointTx) Replace(values ...*model.Color) (err error) {
+	targetValues := make([]interface{}, len(values))
+	for i, v := range values {
+		targetValues[i] = v
+	}
+	return a.tx.Replace(targetValues...)
+}
+
+func (a midpointBelongsToEndpointTx) Delete(values ...*model.Color) (err error) {
+	targetValues := make([]interface{}, len(values))
+	for i, v := range values {
+		targetValues[i] = v
+	}
+	return a.tx.Delete(targetValues...)
+}
+
+func (a midpointBelongsToEndpointTx) Clear() error {
+	return a.tx.Clear()
+}
+
+func (a midpointBelongsToEndpointTx) Count() int64 {
+	return a.tx.Count()
 }
 
 type midpointDo struct{ gen.DO }

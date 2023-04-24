@@ -6,13 +6,20 @@ import (
 
 type Midpoint struct {
 	gorm.Model
-	StartpointR float64
-	StartpointG float64
-	StartpointB float64
-	EndpointR   float64
-	EndpointG   float64
-	EndpointB   float64
-	MidpointR   float64
-	MidpointG   float64
-	MidpointB   float64
+	Startpoint Color `gorm:"foreignKey:StartpointID"`
+	Midpoint   Color `gorm:"foreignKey:MidpointID"`
+	Endpoint   Color `gorm:"foreignKey:EndpointID"`
+
+	StartpointID int
+	MidpointID   int
+	EndpointID   int
+}
+
+var AllModels []interface{}
+
+func init() {
+	AllModels = []interface{}{
+		Midpoint{},
+		Color{},
+	}
 }
