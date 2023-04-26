@@ -249,10 +249,10 @@ func firstChooseTestColors(ctc []pixel.RGBA) (out []pixel.RGBA) {
 		out = append(out, out[0])
 		out[1].B += 2 * offset
 	} else {
-		// Semifinals round 1: when step == 4, append ctc[base] and ctc[1+base]
-		// Semifinals round 2: when step == 5, append ctc[2+base] and ctc[3+base]
-		// Finals: when step == 6, append ctc[4+base] and ctc[5+base]
-		out = append(out, ctc[step+length-8], ctc[step+length-7])
+		// Semifinals round 1: when step == 4, output ctc[base] and ctc[1+base]
+		// Semifinals round 2: when step == 5, output ctc[2+base] and ctc[3+base]
+		// Finals: when step == 6, output ctc[4+base] and ctc[5+base]
+		out = []pixel.RGBA{ctc[step+length-8], ctc[step+length-7]}
 	}
 
 	return out
