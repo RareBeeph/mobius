@@ -53,7 +53,7 @@ func run() {
 	}
 
 	var testRects []*Button
-	testRects = makeTestRects(controlRects, 0, 0, []pixel.RGBA{}, &testRects)
+	testRects = makeTestRects(controlRects, []pixel.RGBA{}, &testRects)
 
 	saveButton := Button{
 		ColoredRect: ColoredRect{
@@ -217,42 +217,49 @@ func chooseControlColor() pixel.RGBA {
 	return pixel.RGB(rand.Float64(), rand.Float64(), rand.Float64())
 }
 
-func firstChooseTestColors(inColor pixel.RGBA, depth int, step int, ctc []pixel.RGBA) (out []pixel.RGBA) {
-	// When this is initially called by makeTestRects, it will be centered on 0.5 gray.
+func firstChooseTestColors(ctc []pixel.RGBA) (out []pixel.RGBA) {
+	length := len(ctc)
+	step := length % 7
+	base := length - step
+
+	inColor := pixel.RGB(0.5, 0.5, 0.5)
+	if base > 0 {
+		inColor = ctc[base-1]
+	}
 
 	if step < 4 {
 		// Over the course of 4 steps, this will generate all 8 colors at a given distance from the input color.
-		// The offset will start out as 0.25 and cut in half every depth increment.
-		offset := 1 / (float64(int(3) << depth))
-		out = append(out, pixel.RGB(inColor.R-offset, inColor.G-offset, inColor.B-offset))
+		// The offset will start out as 1/3 and cut in half every 7 steps, i.e. every repetition of the tournament bracket.
+		offset := 1 / (float64(int(3) << (base / 7)))
 
+		// Expect R, G, and B values to occasionally exceed 1 or fall below 0.
+		// TODO: clamp that.
+
+		// Choose the first color: per step, G and R offsets respectively follow the pattern --, -+, +-, ++
+		out = []pixel.RGBA{pixel.RGB(inColor.R-offset, inColor.G-offset, inColor.B-offset)}
 		if step&1 == 1 {
 			out[0].R += 2 * offset
 		}
 		if step&2 == 2 {
 			out[0].G += 2 * offset
 		}
+
+		// Choose the second color: same as the first, but switch B offset from - to +.
+		// After 4 steps, this generates all 8 sequences of three + or - offsets.
 		out = append(out, out[0])
 		out[1].B += 2 * offset
-	} else if step == 4 {
-		// Semifinals round 1
-		out = append(out, ctc[0], ctc[1])
-	} else if step == 5 {
-		// Semifinals round 2
-		out = append(out, ctc[2], ctc[3])
-	} else if step == 6 {
-		// Finals
-		out = append(out, ctc[4], ctc[5])
 	} else {
-		// Recurse with incremented depth, centered on the winner of the tournament.
-		out = firstChooseTestColors(ctc[6], depth+1, step-7, ctc[7:])
+		// Semifinals round 1: when step == 4, append ctc[base] and ctc[1+base]
+		// Semifinals round 2: when step == 5, append ctc[2+base] and ctc[3+base]
+		// Finals: when step == 6, append ctc[4+base] and ctc[5+base]
+		out = append(out, ctc[step+length-8], ctc[step+length-7])
 	}
 
 	return out
 }
 
-func makeTestRects(controlRects []Button, depth int, step int, ctc []pixel.RGBA, testRects *[]*Button) (tr []*Button) {
-	for idx, col := range firstChooseTestColors(pixel.RGB(0.5, 0.5, 0.5), depth, step, ctc) {
+func makeTestRects(controlRects []Button, ctc []pixel.RGBA, testRects *[]*Button) (tr []*Button) {
+	for idx, col := range firstChooseTestColors(ctc) {
 		rect := Button{ColoredRect: ColoredRect{Bounds: pixel.R(500, 100+float64(idx*100), 600, 200+float64(idx*100)), Color: col}}
 		rect.procedure = func() {
 			// Indicate which color was clicked
@@ -263,7 +270,7 @@ func makeTestRects(controlRects []Button, depth int, step int, ctc []pixel.RGBA,
 
 			// Generate a new set of colors to compare
 			// controlRects[0].Color = chooseControlColor()
-			a := makeTestRects(controlRects, 0, len(chosenTestColors), chosenTestColors, testRects)
+			a := makeTestRects(controlRects, chosenTestColors, testRects)
 			for len(*testRects) < 2 {
 				*testRects = append(*testRects, &Button{})
 			}
