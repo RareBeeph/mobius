@@ -24,10 +24,7 @@ func main() {
 	pixelgl.Run(run)
 }
 
-var gstep int
-var gdepth int
 var chosenTestColors []pixel.RGBA
-var testRects []*Button
 
 func run() {
 	cfg := pixelgl.WindowConfig{
@@ -55,9 +52,8 @@ func run() {
 		}, procedure: func() {}},
 	}
 
-	gdepth = 0
-	gstep = 0
-	testRects = makeTestRects(controlRects, gdepth, gstep, []pixel.RGBA{})
+	var testRects []*Button
+	testRects = makeTestRects(controlRects, 0, 0, []pixel.RGBA{}, &testRects)
 
 	saveButton := Button{
 		ColoredRect: ColoredRect{
@@ -188,7 +184,7 @@ func run() {
 		// Draw step counter
 		// TODO: actually use formatting
 		fmt.Fprint(basicTxt, "Step ")
-		fmt.Fprintln(basicTxt, gstep%7)
+		fmt.Fprintln(basicTxt, len(chosenTestColors)%7)
 		basicTxt.Draw(win, pixel.IM)
 
 		win.Update()
@@ -255,7 +251,7 @@ func firstChooseTestColors(inColor pixel.RGBA, depth int, step int, ctc []pixel.
 	return out
 }
 
-func makeTestRects(controlRects []Button, depth int, step int, ctc []pixel.RGBA) (tr []*Button) {
+func makeTestRects(controlRects []Button, depth int, step int, ctc []pixel.RGBA, testRects *[]*Button) (tr []*Button) {
 	for idx, col := range firstChooseTestColors(pixel.RGB(0.5, 0.5, 0.5), depth, step, ctc) {
 		rect := Button{ColoredRect: ColoredRect{Bounds: pixel.R(500, 100+float64(idx*100), 600, 200+float64(idx*100)), Color: col}}
 		rect.procedure = func() {
@@ -267,10 +263,12 @@ func makeTestRects(controlRects []Button, depth int, step int, ctc []pixel.RGBA)
 
 			// Generate a new set of colors to compare
 			// controlRects[0].Color = chooseControlColor()
-			gstep++
-			a := makeTestRects(controlRects, gdepth, gstep, chosenTestColors)
-			*testRects[0] = *a[0]
-			*testRects[1] = *a[1]
+			a := makeTestRects(controlRects, 0, len(chosenTestColors), chosenTestColors, testRects)
+			for len(*testRects) < 2 {
+				*testRects = append(*testRects, &Button{})
+			}
+			*(*testRects)[0] = *a[0]
+			*(*testRects)[1] = *a[1]
 		}
 		tr = append(tr, &rect)
 	}
