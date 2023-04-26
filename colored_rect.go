@@ -7,6 +7,8 @@ import (
 )
 
 type ColoredRect struct {
+	Entity
+
 	Bounds  pixel.Rect
 	Color   pixel.RGBA
 	Surface *imdraw.IMDraw
