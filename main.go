@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/faiface/pixel"
+	"github.com/faiface/pixel/imdraw"
 	"github.com/faiface/pixel/pixelgl"
 	"github.com/faiface/pixel/text"
 	"golang.org/x/image/font/basicfont"
@@ -41,15 +42,18 @@ func run() {
 
 	rand.Seed(time.Now().UnixMicro())
 
+	// TODO: make this less bloated
 	controlRects := []Button{
 		{ColoredRect: ColoredRect{
 			Bounds: pixel.R(200, 100, 500, 300),
 			Color:  chooseControlColor(),
-		}, procedure: func() {}},
+			Entity: Entity{UpdateFunc: func(time.Duration) {}},
+		}, OnEvent: func() {}},
 		{ColoredRect: ColoredRect{
 			Bounds: pixel.R(600, 100, 900, 300),
 			Color:  chooseControlColor(),
-		}, procedure: func() {}},
+			Entity: Entity{UpdateFunc: func(time.Duration) {}},
+		}, OnEvent: func() {}},
 	}
 
 	var testRects []*Button
@@ -59,8 +63,9 @@ func run() {
 		ColoredRect: ColoredRect{
 			Bounds: pixel.R(400, 400, 700, 600),
 			Color:  pixel.RGB(0.8, 0.8, 0.8),
+			Entity: Entity{UpdateFunc: func(time.Duration) {}},
 		},
-		procedure: func() {
+		OnEvent: func() {
 			if len(chosenTestColors) > 0 {
 				start := model.NewColorFromRgba(controlRects[0].Color)
 				end := model.NewColorFromRgba(controlRects[1].Color)
@@ -79,14 +84,31 @@ func run() {
 		},
 	}
 
-	var frameTimes []time.Time
+	frameTimes := []time.Time{time.Now()}
 
 	basicAtlas := text.NewAtlas(basicfont.Face7x13, text.ASCII)
 	basicTxt := text.New(pixel.V(100, 100), basicAtlas)
 
-	// TODO: make these work again
-	clickIndicator := Button{ColoredRect: ColoredRect{Bounds: pixel.R(0, 10, 10, 20), Color: pixel.RGB(0, 1, 0)}, procedure: func() {}}
-	collisionIndicator := Button{ColoredRect: ColoredRect{Bounds: pixel.R(0, 0, 10, 10), Color: pixel.RGB(0, 1, 0)}, procedure: func() {}}
+	clickIndicator := Button{ColoredRect: ColoredRect{Bounds: win.Bounds(), Color: pixel.RGB(0, 0, 0), Entity: Entity{surface: imdraw.New(nil)}}}
+	clickIndicator.UpdateFunc = func(time.Duration) {
+		clickIndicator.Color.G = 0
+		clickIndicator.Color.A = 0
+		clickIndicator.Bounds = win.Bounds()
+	}
+	clickIndicator.OnEvent = func() {
+		clickIndicator.Color.G = 1
+		clickIndicator.Color.A = 1
+		clickIndicator.Bounds = pixel.R(0, 10, 10, 20)
+	}
+
+	collisionIndicator := Button{
+		ColoredRect: ColoredRect{
+			Bounds: pixel.R(0, 0, 10, 10),
+			Color:  pixel.RGB(0, 1, 0),
+			Entity: Entity{UpdateFunc: func(time.Duration) {}},
+		},
+		OnEvent: func() {},
+	}
 
 	entities := []*Button{}
 	entities = append(entities, &controlRects[0], &controlRects[1])
@@ -95,87 +117,41 @@ func run() {
 
 	clicked := Event{}
 
+	collisionIndicator.OnEvent = func() {
+		for i, e := range entities {
+			if e.Contains(clicked.mousePos) {
+				collisionIndicator.Bounds = pixel.R(float64(10*i), 0, float64(10*i+10), 10)
+				collisionIndicator.Color = e.Color
+				collisionIndicator.Color.A = 1
+			}
+		}
+	}
+	collisionIndicator.UpdateFunc = func(time.Duration) {
+		collisionIndicator.Bounds = win.Bounds()
+		collisionIndicator.Color = pixel.RGB(0, 0, 0)
+		collisionIndicator.Color.A = 0
+	}
+
 	for !win.Closed() {
-		/*
-			// Blanking
-			win.Clear(pixel.RGB(0, 0, 0))
-			basicTxt.Clear()
-
-			// Logic sweep
-			frameTimes = append(frameTimes, time.Now())
-			for frameTimes[len(frameTimes)-1].Sub(frameTimes[0]).Seconds() >= 1 {
-				frameTimes = frameTimes[1:]
-			}
-
-			mouseClicked := win.JustPressed(pixelgl.MouseButton1)
-
-			for idx, rect := range append(controlRects, testRects...) {
-				rect.Draw(win)
-				if mouseClicked && rect.Contains(win.MousePosition()) {
-					// Indicate which color was clicked
-					collisionIndicator.Bounds = pixel.R(float64(idx*10), 0, float64(idx*10)+10, 10)
-					collisionIndicator.Color = rect.Color
-					collisionIndicator.Draw(win)
-					chosenTestColors = append(chosenTestColors, rect.Color)
-
-					// Generate a new set of colors to compare
-					// controlRects[0].Color = chooseControlColor()
-					step++
-					testRects = makeTestRects(controlRects, depth, step, chosenTestColors)
-				}
-			}
-			if mouseClicked {
-				clickIndicator.Draw(win)
-			}
-
-			// Save button
-			saveButton.Draw(win)
-			if mouseClicked && saveButton.Contains(win.MousePosition()) && len(chosenTestColors) > 0 {
-				start := model.NewColorFromRgba(controlRects[0].Color)
-				end := model.NewColorFromRgba(controlRects[1].Color)
-				mid := model.NewColorFromRgba(chosenTestColors[len(chosenTestColors)-1])
-				a := model.Midpoint{
-					Startpoint: *start,
-					Endpoint:   *end,
-					Midpoint:   *mid,
-				}
-				m.Create(&a)
-
-				//Debug
-				b, _ := m.Preload(m.Midpoint).Last()
-				log.Printf("ID: %d, R: %f, G: %f, B: %f", b.Midpoint.ID, b.Midpoint.R, b.Midpoint.G, b.Midpoint.B)
-			}
-
-			// Draw FPS tracker
-			fmt.Fprintln(basicTxt, len(frameTimes))
-
-			// Draw step counter
-			// TODO: actually use formatting
-			fmt.Fprint(basicTxt, "Step ")
-			fmt.Fprintln(basicTxt, step%7)
-			basicTxt.Draw(win, pixel.IM)
-
-			// Send to screen!
-			win.Update()
-		*/
-
 		win.Clear(pixel.RGB(0, 0, 0))
 		basicTxt.Clear()
+
+		// TODO: make fps counter an entity
+		frameTimes = append(frameTimes, time.Now())
+		for frameTimes[len(frameTimes)-1].Sub(frameTimes[0]).Seconds() >= 1 {
+			frameTimes = frameTimes[1:]
+		}
 
 		click := win.JustPressed(pixelgl.MouseButton1)
 		if click {
 			clicked.mousePos = win.MousePosition()
 		}
 		for _, e := range entities {
-			e.Draw(win)
+			e.Update(frameTimes[len(frameTimes)-1].Sub(frameTimes[len(frameTimes)-2]))
 			if click {
 				e.Handle(clicked)
 			}
-		}
-
-		frameTimes = append(frameTimes, time.Now())
-		for frameTimes[len(frameTimes)-1].Sub(frameTimes[0]).Seconds() >= 1 {
-			frameTimes = frameTimes[1:]
+			e.Draw(win)
 		}
 
 		// Draw FPS tracker
@@ -188,28 +164,6 @@ func run() {
 		basicTxt.Draw(win, pixel.IM)
 
 		win.Update()
-
-		/*
-			The run loop handles the screen.
-				win.Clear(pixel.RGB(0,0,0))
-				...
-				win.Update()
-
-
-			Entities should be stored as a collection that can be iterated through.
-				// Should I have two collections, one for interactables and one for things that just do their own thing?
-				// Should the creation and addition of entities to this collection be delegated too?
-
-				var entities []Entity
-				var event Event{
-					Click: win.JustPressed(pixelgl.MouseButton1)
-					Mpos: win.MousePosition()
-				}
-				...
-				for _,e := range entities {
-					e.Handle(event) // Each entity decides if it cares about each aspect of the event
-				}
-		*/
 	}
 }
 
@@ -259,17 +213,13 @@ func firstChooseTestColors(ctc []pixel.RGBA) (out []pixel.RGBA) {
 }
 
 func makeTestRects(controlRects []Button, ctc []pixel.RGBA, testRects *[]*Button) (tr []*Button) {
+	// Generate a new set of colors to compare
 	for idx, col := range firstChooseTestColors(ctc) {
-		rect := Button{ColoredRect: ColoredRect{Bounds: pixel.R(500, 100+float64(idx*100), 600, 200+float64(idx*100)), Color: col}}
-		rect.procedure = func() {
-			// Indicate which color was clicked
-			// collisionIndicator.Bounds = pixel.R(float64(idx*10), 0, float64(idx*10)+10, 10)
-			// collisionIndicator.Color = rect.Color
-			// collisionIndicator.Draw(win)
+		// Make the rects, which when clicked call this function again
+		rect := Button{ColoredRect: ColoredRect{Bounds: pixel.R(500, 100+float64(idx*100), 600, 200+float64(idx*100)), Color: col, Entity: Entity{UpdateFunc: func(time.Duration) {}}}}
+		rect.OnEvent = func() {
 			chosenTestColors = append(chosenTestColors, rect.Color)
 
-			// Generate a new set of colors to compare
-			// controlRects[0].Color = chooseControlColor()
 			a := makeTestRects(controlRects, chosenTestColors, testRects)
 			for len(*testRects) < 2 {
 				*testRects = append(*testRects, &Button{})

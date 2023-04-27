@@ -9,10 +9,12 @@ import (
 
 type Entity struct {
 	surface *imdraw.IMDraw
+
+	UpdateFunc func(time.Duration)
 }
 
-func Update(deltatime time.Duration) {
-
+func (entity *Entity) Update(deltatime time.Duration) {
+	entity.UpdateFunc(deltatime)
 }
 
 func (entity *Entity) Draw(window *pixelgl.Window) {
