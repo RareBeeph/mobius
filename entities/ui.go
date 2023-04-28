@@ -13,6 +13,13 @@ import (
 	"golang.org/x/image/font/basicfont"
 )
 
+/*
+	Nit: function argument names should not be capitalized as
+	this makes it difficult to distinguish what is and is not
+	a package level variable. Data scoping is communicated solely
+	through naming conventions in Go, so make sure you're not
+	confusing your reader.
+*/
 func Initialize(Win *pixelgl.Window, Clicked *types.Event) {
 	// Specifically not init because pixelgl needs to Run() before this
 

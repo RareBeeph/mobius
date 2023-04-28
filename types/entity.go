@@ -13,12 +13,24 @@ type Entity struct {
 	UpdateFunc func(time.Duration)
 }
 
-type E interface {
+/*
+Interfaces are usually named so that they fit in a phrase like
+"object implements the EventHandler interface" and so I would
+recommend renaming it. HOWEVER...
+*/
+type EventHandler interface {
 	Update(time.Duration)
 	Draw(*pixelgl.Window)
 	Handle(Event)
 	Handles() bool
 }
+
+/*
+...the code ergonomics of having it named E are undeniable.
+We get the best of both worlds by using type aliases, which
+are declared like so:
+*/
+type E = EventHandler
 
 func (entity *Entity) Update(deltatime time.Duration) {
 	if entity.UpdateFunc != nil {
