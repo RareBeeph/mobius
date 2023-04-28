@@ -1,4 +1,4 @@
-package main
+package types
 
 import (
 	"time"
@@ -13,8 +13,17 @@ type Entity struct {
 	UpdateFunc func(time.Duration)
 }
 
+type E interface {
+	Update(time.Duration)
+	Draw(*pixelgl.Window)
+	Handle(Event)
+	Handles() bool
+}
+
 func (entity *Entity) Update(deltatime time.Duration) {
-	entity.UpdateFunc(deltatime)
+	if entity.UpdateFunc != nil {
+		entity.UpdateFunc(deltatime)
+	}
 }
 
 func (entity *Entity) Draw(window *pixelgl.Window) {
@@ -25,6 +34,6 @@ func (entity *Entity) Handle(event Event) {
 
 }
 
-func Handles() bool {
+func (entity *Entity) Handles() bool {
 	return false
 }

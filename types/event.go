@@ -1,7 +1,7 @@
-package main
+package types
 
 import "github.com/faiface/pixel"
 
 type Event struct {
-	mousePos pixel.Vec
+	MousePos pixel.Vec
 }

@@ -1,4 +1,4 @@
-package main
+package types
 
 type Button struct {
 	ColoredRect
@@ -7,7 +7,7 @@ type Button struct {
 }
 
 func (b *Button) Handle(event Event) {
-	if b.Contains(event.mousePos) {
+	if b.Contains(event.MousePos) {
 		b.OnEvent()
 	}
 }
