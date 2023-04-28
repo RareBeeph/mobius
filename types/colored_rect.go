@@ -14,12 +14,14 @@ type ColoredRect struct {
 	Surface *imdraw.IMDraw
 }
 
-type CR interface {
+type ColoredRectHandler interface {
 	E
 
 	Contains(pixel.Vec) bool
 	GetColor() pixel.RGBA
 }
+
+type CR = ColoredRectHandler
 
 func (r *ColoredRect) Contains(point pixel.Vec) bool {
 	return (point.X >= r.Bounds.Min.X &&

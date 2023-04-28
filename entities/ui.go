@@ -13,21 +13,14 @@ import (
 	"golang.org/x/image/font/basicfont"
 )
 
-/*
-	Nit: function argument names should not be capitalized as
-	this makes it difficult to distinguish what is and is not
-	a package level variable. Data scoping is communicated solely
-	through naming conventions in Go, so make sure you're not
-	confusing your reader.
-*/
-func Initialize(Win *pixelgl.Window, Clicked *types.Event) {
+func Initialize(win *pixelgl.Window, clicked *types.Event) {
 	// Specifically not init because pixelgl needs to Run() before this
 
-	ClickIndicator.Bounds = Win.Bounds()
+	ClickIndicator.Bounds = win.Bounds()
 	ClickIndicator.UpdateFunc = func(time.Duration) {
 		ClickIndicator.Color.G = 0
 		ClickIndicator.Color.A = 0
-		ClickIndicator.Bounds = Win.Bounds()
+		ClickIndicator.Bounds = win.Bounds()
 	}
 	ClickIndicator.OnEvent = func() {
 		ClickIndicator.Color.G = 1
@@ -39,7 +32,7 @@ func Initialize(Win *pixelgl.Window, Clicked *types.Event) {
 
 	CollisionIndicator.OnEvent = func() {
 		for i, e := range AllEntities {
-			if e.Contains(Clicked.MousePos) {
+			if e.Contains(clicked.MousePos) {
 				CollisionIndicator.Bounds = pixel.R(float64(10*i), 0, float64(10*i+10), 10)
 				CollisionIndicator.Color = e.GetColor()
 				CollisionIndicator.Color.A = 1
@@ -47,7 +40,7 @@ func Initialize(Win *pixelgl.Window, Clicked *types.Event) {
 		}
 	}
 	CollisionIndicator.UpdateFunc = func(time.Duration) {
-		CollisionIndicator.Bounds = Win.Bounds()
+		CollisionIndicator.Bounds = win.Bounds()
 		CollisionIndicator.Color = pixel.RGB(0, 0, 0)
 		CollisionIndicator.Color.A = 0
 	}

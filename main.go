@@ -55,7 +55,6 @@ func run() {
 		deltatime = thisFrame.Sub(lastFrame)
 
 		click := win.JustPressed(pixelgl.MouseButton1)
-		// deltatime := frameTimes[len(frameTimes)-1].Sub(frameTimes[len(frameTimes)-2])
 		defaultDispatch.Update(deltatime)
 		if click {
 			clicked.MousePos = win.MousePosition()

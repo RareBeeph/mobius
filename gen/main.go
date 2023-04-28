@@ -15,7 +15,7 @@ func main() {
 
 	g.UseDB(db.Connection)
 
-	// Generate basic type-safe DAO API for struct `model.User` following conventions
+	// Generate basic type-safe DAO API for model structs following conventions
 	g.ApplyBasic(model.AllModels...)
 
 	// Generate the code
