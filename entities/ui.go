@@ -9,6 +9,8 @@ import (
 
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/pixelgl"
+	"github.com/faiface/pixel/text"
+	"golang.org/x/image/font/basicfont"
 )
 
 func Initialize(Win *pixelgl.Window, Clicked *types.Event) {
@@ -42,12 +44,32 @@ func Initialize(Win *pixelgl.Window, Clicked *types.Event) {
 		CollisionIndicator.Color = pixel.RGB(0, 0, 0)
 		CollisionIndicator.Color.A = 0
 	}
+
+	basicAtlas := text.NewAtlas(basicfont.Face7x13, text.ASCII)
+	FpsC.Text = text.New(pixel.V(100, 100), basicAtlas)
+	FpsC.FrameTimes = []time.Time{time.Now()}
+
+	FpsC.UpdateFunc = func(dt time.Duration) {
+		FpsC.Text.Clear()
+
+		FpsC.FrameTimes = append(FpsC.FrameTimes, FpsC.FrameTimes[len(FpsC.FrameTimes)-1].Add(dt)) // Not strictly synced to the time kept track of in main
+		for FpsC.FrameTimes[len(FpsC.FrameTimes)-1].Sub(FpsC.FrameTimes[0]).Seconds() >= 1 {
+			FpsC.FrameTimes = FpsC.FrameTimes[1:]
+		}
+
+		FpsC.StepCount = len(ChosenTestColors) % 7
+	}
+
+	AllTexts = []*types.FpsCounter{&FpsC}
 }
 
 var AllEntities []types.CR
+var AllTexts []*types.FpsCounter
 
 var ClickIndicator = types.Button{ColoredRect: types.ColoredRect{Color: pixel.RGB(0, 0, 0)}}
 var CollisionIndicator = types.Button{ColoredRect: types.ColoredRect{Bounds: pixel.R(0, 0, 10, 10), Color: pixel.RGB(0, 1, 0)}}
+
+var FpsC types.FpsCounter
 
 var SaveButton = types.Button{
 	ColoredRect: types.ColoredRect{Bounds: pixel.R(400, 400, 700, 600), Color: pixel.RGB(0.8, 0.8, 0.8)},
