@@ -2,9 +2,9 @@ package main
 
 import (
 	"colorspacer/db"
+	"colorspacer/db/model"
+	"colorspacer/db/query"
 	"colorspacer/entities"
-	"colorspacer/model"
-	"colorspacer/query"
 	"colorspacer/types"
 
 	"fmt"

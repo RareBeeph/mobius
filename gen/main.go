@@ -4,12 +4,12 @@ import (
 	"gorm.io/gen"
 
 	"colorspacer/db"
-	"colorspacer/model"
+	"colorspacer/db/model"
 )
 
 func main() {
 	g := gen.NewGenerator(gen.Config{
-		OutPath: "../query",
+		OutPath: "../db/query",
 		Mode:    gen.WithoutContext | gen.WithDefaultQuery | gen.WithQueryInterface, // generate mode
 	})
 

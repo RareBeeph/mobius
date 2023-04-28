@@ -16,7 +16,7 @@ import (
 
 	"gorm.io/plugin/dbresolver"
 
-	"colorspacer/model"
+	"colorspacer/db/model"
 )
 
 func newColor(db *gorm.DB, opts ...gen.DOOption) color {

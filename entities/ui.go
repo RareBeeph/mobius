@@ -1,8 +1,8 @@
 package entities
 
 import (
-	"colorspacer/model"
-	"colorspacer/query"
+	"colorspacer/db/model"
+	"colorspacer/db/query"
 	"colorspacer/types"
 	"log"
 	"time"

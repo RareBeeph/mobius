@@ -16,7 +16,7 @@ import (
 
 	"gorm.io/plugin/dbresolver"
 
-	"colorspacer/model"
+	"colorspacer/db/model"
 )
 
 func newMidpoint(db *gorm.DB, opts ...gen.DOOption) midpoint {
