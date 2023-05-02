@@ -41,6 +41,7 @@ func run() {
 	defaultDispatch := Dispatch{
 		Buttons:    entities.AllEntities, // AllEntities isn't initialized until entities.Initialize()
 		TextFields: entities.AllTexts,
+		Graph:      entities.Graph, // Temp
 	}
 
 	var lastFrame time.Time

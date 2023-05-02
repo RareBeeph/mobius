@@ -61,10 +61,17 @@ func Initialize(win *pixelgl.Window, clicked *types.Event) {
 	}
 
 	AllTexts = []*types.FpsCounter{&FpsC}
+
+	Graph = &(types.CurveDisplay{
+		Center:      pixel.V(100, 500),
+		Curve:       types.RgbCurve{ControlPoints: []pixel.RGBA{ControlRects[0].Color, ControlRects[1].Color}},
+		BasisMatrix: [9]float64{-70, 0, 70, -50, 100, -50, 20, 20, 20},
+	})
 }
 
 var AllEntities []types.CR
 var AllTexts []*types.FpsCounter
+var Graph *types.CurveDisplay // Temp
 
 var ClickIndicator = types.Button{ColoredRect: types.ColoredRect{Color: pixel.RGB(0, 0, 0)}}
 var CollisionIndicator = types.Button{ColoredRect: types.ColoredRect{Bounds: pixel.R(0, 0, 10, 10), Color: pixel.RGB(0, 1, 0)}}
