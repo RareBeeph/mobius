@@ -46,7 +46,7 @@ func (d *CurveDisplay) Draw(window *pixelgl.Window) {
 
 	for _, poi := range pointlist {
 		d.surface.Color = poi.col
-		d.surface.Push(poi.pos)
+		d.surface.Push(d.Center.Add(poi.pos))
 		d.surface.Circle(10, 0)
 	}
 

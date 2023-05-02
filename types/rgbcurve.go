@@ -51,21 +51,21 @@ func (c *RgbCurve) EvenLagrangeInterp(t float64) (sum pixel.RGBA) {
 	// Beware Runge's phenomenon for len > 5. Consider Chebyshev spacing (although that might be hard given our test scheme)
 	// Consider finding a package that implements this more generally or more performantly
 
-	mul := float64(0)
+	mul := float64(1)
 	n := len(c.ControlPoints) - 1
 
 	// For each control color, find its Lagrange basis polynomial and add the corresponding amount to the sum
 	for i, col := range c.ControlPoints {
-		mul = 0
+		mul = 1
 
 		// Construct the basis polynomial by multiplying terms with zeros at all j/n other than i/n
 		for j := range c.ControlPoints {
 			if i-j != 0 {
-				mul *= (t - float64(j)/float64(n)) / (float64(i-j) / float64(n)) // Broken
+				mul *= (t - float64(j)/float64(n)) / (float64(i-j) / float64(n))
 			}
 		}
 
-		sum.Add(col.Scaled(mul))
+		sum = sum.Add(col.Scaled(mul))
 	}
 
 	return sum
