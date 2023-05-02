@@ -2,6 +2,7 @@ package types
 
 import (
 	"math"
+	"sort"
 
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/pixelgl"
@@ -75,26 +76,16 @@ func (d *CurveDisplay) Handle(delta Event) {
 }
 
 func InsertionSort(p []point) []point {
-	// Insertion sort is the first one that came to mind.
-	// I know it's slow conceptually and my implementation probably sucks on top, but I don't know to sort these by depth with, say, sort package
+	// Create a copy of the slice so we're not modifying an input argument
+	sorted := make([]point, len(p))
+	copy(sorted, p)
 
-	var mindepth float64
-	var mindex int
+	// Use our own compare function to sort by depth ascending
+	sort.Slice(sorted, func(i, j int) bool {
+		return sorted[i].depth < sorted[j].depth
+	})
 
-	for i, poi := range p {
-		mindepth = math.Inf(1)
-
-		for j, poin := range p[i:] {
-			if poin.depth < mindepth {
-				mindepth = poin.depth
-				mindex = j
-			}
-		}
-
-		p[i] = p[mindex]
-		p[mindex] = poi
-	}
-	return p // Temp
+	return sorted
 }
 
 func (d *CurveDisplay) ProjectParallel(col pixel.RGBA) (out pixel.Vec, depth float64) {
