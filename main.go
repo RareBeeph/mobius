@@ -52,6 +52,8 @@ func run() {
 	thisFrame := time.Now()
 	var deltatime time.Duration
 
+	ButtonsUsed := []pixelgl.Button{pixelgl.MouseButton1, pixelgl.MouseButton2, pixelgl.KeyC}
+
 	for !win.Closed() {
 		win.Clear(pixel.RGB(0, 0, 0))
 
@@ -61,17 +63,28 @@ func run() {
 
 		lastPos = thisPos
 		thisPos = win.MousePosition()
-		delta = types.Event{MousePos: (thisPos.Sub(lastPos))}
+		delta = types.Event{MousePos: (thisPos.Sub(lastPos)), InitialPos: delta.InitialPos}
 
-		click := win.JustPressed(pixelgl.MouseButton1)
+		clicked.Buttons = []pixelgl.Button{}
+		delta.Buttons = []pixelgl.Button{}
+		for _, b := range ButtonsUsed {
+			if win.JustPressed(b) {
+				clicked.Buttons = append(clicked.Buttons, b)
+				delta.InitialPos = win.MousePosition()
+			}
+			if win.Pressed(b) {
+				delta.Buttons = append(delta.Buttons, b)
+			}
+		}
+
 		defaultDispatch.Update(deltatime)
-		if click {
-			clicked.MousePos = win.MousePosition()
-			defaultDispatch.Handle(clicked)
-		}
-		if win.Pressed(pixelgl.MouseButton1) {
-			defaultDispatch.Graph.Handle(delta) // Temp
-		}
+		//if clicked.Contains(pixelgl.MouseButton1) {
+		clicked.MousePos = win.MousePosition()
+		defaultDispatch.Handle(clicked)
+		//}
+		//if delta.Contains(pixelgl.MouseButton1) {
+		defaultDispatch.Graph.Handle(delta) // Temp
+		//}
 		defaultDispatch.Draw(win) // Click indicators only work if update, then handle, then draw (or a rotation thereof)
 
 		win.Update()

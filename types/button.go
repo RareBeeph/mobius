@@ -1,5 +1,7 @@
 package types
 
+import "github.com/faiface/pixel/pixelgl"
+
 type Button struct {
 	ColoredRect
 
@@ -8,6 +10,8 @@ type Button struct {
 
 func (b *Button) Handle(event Event) {
 	if b.Contains(event.MousePos) {
-		b.OnEvent()
+		if event.Contains(pixelgl.MouseButton1) {
+			b.OnEvent()
+		}
 	}
 }
