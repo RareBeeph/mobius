@@ -31,12 +31,7 @@ func (r *ColoredRect) Contains(point pixel.Vec) bool {
 }
 
 func (r *ColoredRect) Draw(window *pixelgl.Window) {
-	// Generate new surface if we were not provided one
-	if r.Surface == nil {
-		r.Surface = imdraw.New(nil)
-	}
-
-	r.Surface.Clear()
+	r.GuardSurface()
 
 	r.Surface.Color = r.Color
 	r.Surface.Push(r.Bounds.Min)

@@ -4,7 +4,6 @@ import (
 	"math"
 
 	"github.com/faiface/pixel"
-	"github.com/faiface/pixel/imdraw"
 	"github.com/faiface/pixel/pixelgl"
 )
 
@@ -25,11 +24,7 @@ type point struct {
 const GRAIN = 0.01
 
 func (d *CurveDisplay) Draw(window *pixelgl.Window) {
-	if d.surface == nil {
-		d.surface = imdraw.New(nil)
-	}
-
-	d.surface.Clear()
+	d.GuardSurface()
 
 	var pointlist []point
 

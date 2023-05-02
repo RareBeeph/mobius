@@ -22,6 +22,15 @@ type EventHandler interface {
 
 type E = EventHandler
 
+func (entity *Entity) GuardSurface() {
+	// Generate new surface if we were not provided one
+	if entity.surface == nil {
+		entity.surface = imdraw.New(nil)
+	}
+
+	entity.surface.Clear()
+}
+
 func (entity *Entity) Update(deltatime time.Duration) {
 	if entity.UpdateFunc != nil {
 		entity.UpdateFunc(deltatime)
