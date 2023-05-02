@@ -3,6 +3,7 @@ package entities
 import (
 	"colorspacer/types"
 	"math/rand"
+	"time"
 
 	"github.com/faiface/pixel"
 )
@@ -21,6 +22,7 @@ var ChosenTestColors []pixel.RGBA
 var TestRects []*types.Button
 
 func chooseControlColor() pixel.RGBA {
+	rand.Seed(time.Now().UnixMicro()) // Temp until I figure out why rand isn't being random without this here
 	return pixel.RGB(rand.Float64(), rand.Float64(), rand.Float64())
 }
 
