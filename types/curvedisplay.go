@@ -40,12 +40,15 @@ func (d *CurveDisplay) Draw(window *pixelgl.Window) {
 
 	pointlist = InsertionSort(pointlist) // Temp
 
+	// Gridlines. Will render behind curve regardless of depth; fix that later
 	for i, col := range []pixel.RGBA{pixel.RGB(1, 0, 0), pixel.RGB(0, 1, 0), pixel.RGB(0, 0, 1)} {
-		d.surface.Color = pixel.RGB(0, 0, 0)
-		d.surface.Push(d.Center)
-		d.surface.Color = col
-		d.surface.Push(d.Center.Add(pixel.V(d.BasisMatrix[i], d.BasisMatrix[3+i])))
-		d.surface.Line(2)
+		t := float64(0)
+		for t <= 1 {
+			d.surface.Color = col.Scaled(t)
+			d.surface.Push(d.Center.Add(pixel.V(d.BasisMatrix[i], d.BasisMatrix[3+i]).Scaled(t)))
+			d.surface.Circle(300/(200-d.BasisMatrix[6+i]*t), 0)
+			t += GRAIN
+		}
 	}
 
 	for _, poi := range pointlist {
@@ -60,17 +63,67 @@ func (d *CurveDisplay) Draw(window *pixelgl.Window) {
 func (d *CurveDisplay) Handle(delta Event) {
 	rotatedMatrix := d.BasisMatrix
 
-	theta := delta.MousePos.X / 100
+	var phi float64
+	if delta.MousePos.X != 0 {
+		phi = math.Atan(delta.MousePos.Y / delta.MousePos.X)
+	} else if delta.MousePos.Y != 0 {
+		phi = math.Pi / 2 * delta.MousePos.Y / math.Abs(delta.MousePos.Y)
+	} else {
+		return
+	}
+	theta := delta.MousePos.Len() / 100
 
-	// Fully bodged, I didn't even do the actual matrix math I just kinda messed around until it looked good
-	rotatedMatrix[0] = d.BasisMatrix[0]*math.Cos(theta) + d.BasisMatrix[6]*math.Sin(theta)
-	rotatedMatrix[6] = -d.BasisMatrix[0]*math.Sin(theta) + d.BasisMatrix[6]*math.Cos(theta)
+	var sign float64 = 0
+	if delta.MousePos.X != 0 {
+		sign = delta.MousePos.X / math.Abs(delta.MousePos.X)
+	}
 
-	rotatedMatrix[1] = d.BasisMatrix[1]*math.Cos(theta) + d.BasisMatrix[7]*math.Sin(theta)
-	rotatedMatrix[7] = -d.BasisMatrix[1]*math.Sin(theta) + d.BasisMatrix[7]*math.Cos(theta)
+	rotvec := [3]float64{}
 
-	rotatedMatrix[2] = d.BasisMatrix[2]*math.Cos(theta) + d.BasisMatrix[8]*math.Sin(theta)
-	rotatedMatrix[8] = -d.BasisMatrix[2]*math.Sin(theta) + d.BasisMatrix[8]*math.Cos(theta)
+	rotvec[0] = math.Sin(theta) * math.Cos(phi) * sign
+
+	if sign != 0 {
+		rotvec[1] = math.Sin(theta) * math.Sin(phi) * sign
+	} else {
+		rotvec[1] = math.Sin(theta) * delta.MousePos.Y / math.Abs(delta.MousePos.Y)
+	}
+
+	rotvec[2] = math.Sqrt(1 - rotvec[0]*rotvec[0] - rotvec[1]*rotvec[1])
+
+	/*
+		Rotor math!
+		for each basis matrix column:
+			column => Vec3: a*e1 + b*e2 + c*e3
+			first reflection vector: 0*e1 + 0*e2 + 1*e3
+			second reflection vector: L*e1 + M*e2 + N*e3
+			second reflection vector magnitude: define L,M,N such that this is 1
+
+			rotatedcolumn = R*Z*C*(-Z)*(-R) = R*C'*(-R) (for C' = C with inverted e3 component)
+			=
+			(L*e1 + M*e2 + N*e3)
+			* (a*e1 + b*e2 + c*e3)
+			* (-L*e1 - M*e2 - N*e3)
+			=
+			- LaL*e1 - LaM*e2 - LaN*e3 + LbL*e2 - LbM*e1 - LbN*e123 + LcL*e3 + LcM*e123 - LcN*e1
+			- MaL*e2 + MaM*e1 + MaN*e123 - MbL*e1 - MbM*e2 - MbN*e3 - McL*e123 + McM*e3 - McN*e2
+			- NaL*e3 - NaM*e123 + NaN*e1 + NbL*e123 - NbM*e3 + NbN*e2 - NcL*e1 - NcM*e2 - NcN*e3
+			=
+			  (- LaL - LbM - LcN + MaM - MbL + NaN - NcL)*e1
+			+ (- LaM + LbL - MaL - MbM - McN + NbN - NcM)*e2
+			+ (- LaN + LcL - MbN + McM - NaL - NbM - NcN)*e3
+			+ (- LbN + LcM + MaN - McL - NaM + NbL)*e123
+			=
+			  (- LLa - 2LMb - 2LNc + MMa + NNa)*e1
+			+ (- 2LMa + LLb - MMb - 2MNc + NNb)*e2
+			+ (- 2LNa + LLc - 2MNb + MMc - NNc)*e3
+			+ (0)*e123
+	*/
+
+	for i := range [3]bool{} {
+		rotatedMatrix[i] = -rotvec[0]*rotvec[0]*d.BasisMatrix[i] + rotvec[1]*rotvec[1]*d.BasisMatrix[i] + rotvec[2]*rotvec[2]*d.BasisMatrix[i] - 2*rotvec[0]*rotvec[1]*d.BasisMatrix[3+i] + 2*rotvec[0]*rotvec[2]*d.BasisMatrix[6+i]
+		rotatedMatrix[3+i] = rotvec[0]*rotvec[0]*d.BasisMatrix[3+i] - rotvec[1]*rotvec[1]*d.BasisMatrix[3+i] + rotvec[2]*rotvec[2]*d.BasisMatrix[3+i] - 2*rotvec[0]*rotvec[1]*d.BasisMatrix[i] + 2*rotvec[1]*rotvec[2]*d.BasisMatrix[6+i]
+		rotatedMatrix[6+i] = -rotvec[0]*rotvec[0]*d.BasisMatrix[6+i] - rotvec[1]*rotvec[1]*d.BasisMatrix[6+i] + rotvec[2]*rotvec[2]*d.BasisMatrix[6+i] - 2*rotvec[0]*rotvec[2]*d.BasisMatrix[i] - 2*rotvec[1]*rotvec[2]*d.BasisMatrix[3+i]
+	}
 
 	d.BasisMatrix = rotatedMatrix
 }
