@@ -2,16 +2,14 @@ package types
 
 import (
 	"github.com/faiface/pixel"
-	"github.com/faiface/pixel/imdraw"
 	"github.com/faiface/pixel/pixelgl"
 )
 
 type ColoredRect struct {
 	Entity
 
-	Bounds  pixel.Rect
-	Color   pixel.RGBA
-	Surface *imdraw.IMDraw
+	Bounds pixel.Rect
+	Color  pixel.RGBA
 }
 
 type ColoredRectHandler interface {
@@ -33,12 +31,12 @@ func (r *ColoredRect) Contains(point pixel.Vec) bool {
 func (r *ColoredRect) Draw(window *pixelgl.Window) {
 	r.GuardSurface()
 
-	r.Surface.Color = r.Color
-	r.Surface.Push(r.Bounds.Min)
-	r.Surface.Push(r.Bounds.Max)
-	r.Surface.Rectangle(0)
+	r.surface.Color = r.Color
+	r.surface.Push(r.Bounds.Min)
+	r.surface.Push(r.Bounds.Max)
+	r.surface.Rectangle(0)
 
-	r.Surface.Draw(window)
+	r.surface.Draw(window)
 }
 
 func (r *ColoredRect) GetColor() pixel.RGBA {

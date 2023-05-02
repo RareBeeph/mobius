@@ -38,6 +38,7 @@ func (entity *Entity) Update(deltatime time.Duration) {
 }
 
 func (entity *Entity) Draw(window *pixelgl.Window) {
+	entity.GuardSurface()
 	entity.surface.Draw(window) // As of writing this comment, this is never run. It should crash (null reference) if it were.
 }
 
