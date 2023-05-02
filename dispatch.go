@@ -15,6 +15,7 @@ type Dispatch struct {
 
 // These feel a bit repetitive
 func (dispatch *Dispatch) Update(deltatime time.Duration) {
+	dispatch.Graph.Update(deltatime)
 	for _, e := range dispatch.Buttons {
 		e.Update(deltatime)
 	}

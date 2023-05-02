@@ -44,6 +44,10 @@ func run() {
 		Graph:      entities.Graph, // Temp
 	}
 
+	var delta types.Event
+	thisPos := win.MousePosition()
+	var lastPos pixel.Vec
+
 	var lastFrame time.Time
 	thisFrame := time.Now()
 	var deltatime time.Duration
@@ -55,11 +59,18 @@ func run() {
 		thisFrame = time.Now()
 		deltatime = thisFrame.Sub(lastFrame)
 
+		lastPos = thisPos
+		thisPos = win.MousePosition()
+		delta = types.Event{MousePos: (thisPos.Sub(lastPos))}
+
 		click := win.JustPressed(pixelgl.MouseButton1)
 		defaultDispatch.Update(deltatime)
 		if click {
 			clicked.MousePos = win.MousePosition()
 			defaultDispatch.Handle(clicked)
+		}
+		if win.Pressed(pixelgl.MouseButton1) {
+			defaultDispatch.Graph.Handle(delta) // Temp
 		}
 		defaultDispatch.Draw(win) // Click indicators only work if update, then handle, then draw (or a rotation thereof)
 
