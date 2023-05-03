@@ -78,13 +78,10 @@ func run() {
 		}
 
 		defaultDispatch.Update(deltatime)
-		//if clicked.Contains(pixelgl.MouseButton1) {
 		clicked.MousePos = win.MousePosition()
 		defaultDispatch.Handle(clicked)
-		//}
-		//if delta.Contains(pixelgl.MouseButton1) {
-		defaultDispatch.Graph.Handle(delta) // Temp
-		//}
+		defaultDispatch.Graph.Receive(delta) // Temp until my event framework can natively manage the distinction between a position and a deltapos
+
 		defaultDispatch.Draw(win) // Click indicators only work if update, then handle, then draw (or a rotation thereof)
 
 		win.Update()

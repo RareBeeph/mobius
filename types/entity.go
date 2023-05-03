@@ -17,7 +17,8 @@ type EventHandler interface {
 	Update(time.Duration)
 	Draw(*pixelgl.Window)
 	Handle(Event)
-	Handles() bool
+	Handles(Event) bool
+	Receive(Event)
 }
 
 type E = EventHandler
@@ -46,6 +47,12 @@ func (entity *Entity) Handle(event Event) {
 
 }
 
-func (entity *Entity) Handles() bool {
+func (entity *Entity) Handles(event Event) bool {
 	return false
+}
+
+func (entity *Entity) Receive(event Event) {
+	if entity.Handles(event) {
+		entity.Handle(event)
+	}
 }
