@@ -11,11 +11,11 @@ type Event struct {
 	Buttons    []pixelgl.Button
 }
 
-func (e *Event) Contains(b pixelgl.Button) (out bool) {
+func (e *Event) Contains(b pixelgl.Button) bool {
 	for _, t := range e.Buttons {
 		if b == t {
-			out = true
+			return true
 		}
 	}
-	return out
+	return false
 }
