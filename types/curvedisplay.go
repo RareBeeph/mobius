@@ -23,38 +23,38 @@ type point struct {
 	depth float64
 }
 
-const GRAIN = 0.01
+const sampleoffset = 0.01
 
 var DefaultBasisMatrix = [3][3]float64{{-70, 0, 70}, {-50, 100, -50}, {50, 50, 50}}
 
 func (d *CurveDisplay) Draw(window *pixelgl.Window) {
 	d.GuardSurface()
 
-	var pointlist []point
+	var pointList []point
 
-	t := float64(0)
-	for t <= 1 {
-		pointlist = append(pointlist, point{col: d.Curve.EvenLagrangeInterp(t)})
-		pos, depth := d.ProjectParallel(pointlist[len(pointlist)-1].col)
-		pointlist[len(pointlist)-1].pos = pos
-		pointlist[len(pointlist)-1].depth = depth
-		t += GRAIN
+	samplingProgress := float64(0)
+	for samplingProgress <= 1 {
+		pointList = append(pointList, point{col: d.Curve.EvenLagrangeInterp(samplingProgress)})
+		pos, depth := d.ProjectParallel(pointList[len(pointList)-1].col)
+		pointList[len(pointList)-1].pos = pos
+		pointList[len(pointList)-1].depth = depth
+		samplingProgress += sampleoffset
 	}
 
-	pointlist = PointSort(pointlist)
+	pointList = PointSort(pointList)
 
 	// Gridlines. Will render behind curve regardless of depth; fix that later
 	for i, col := range []pixel.RGBA{pixel.RGB(1, 0, 0), pixel.RGB(0, 1, 0), pixel.RGB(0, 0, 1)} {
-		t := float64(0)
-		for t <= 1 {
-			d.surface.Color = col.Scaled(t)
-			d.surface.Push(d.Center.Add(pixel.V(d.BasisMatrix[0][i], d.BasisMatrix[1][i]).Scaled(t)))
-			d.surface.Circle(300/(200-d.BasisMatrix[2][i]*t), 0)
-			t += GRAIN
+		axialDistance := float64(0)
+		for axialDistance <= 1 {
+			d.surface.Color = col.Scaled(axialDistance)
+			d.surface.Push(d.Center.Add(pixel.V(d.BasisMatrix[0][i], d.BasisMatrix[1][i]).Scaled(axialDistance)))
+			d.surface.Circle(300/(200-d.BasisMatrix[2][i]*axialDistance), 0)
+			axialDistance += sampleoffset
 		}
 	}
 
-	for _, poi := range pointlist {
+	for _, poi := range pointList {
 		d.surface.Color = poi.col
 		d.surface.Push(d.Center.Add(poi.pos))
 		d.surface.Circle(500/(200-poi.depth), 0)
@@ -112,26 +112,26 @@ func (d *CurveDisplay) Handle(delta Event) {
 		rotPhaseSign = delta.MousePos.X / math.Abs(delta.MousePos.X)
 	}
 
-	rotvec := [3]float64{}
+	rotVec := [3]float64{}
 
-	rotvec[0] = math.Sin(rotMagnitude) * math.Cos(rotPhase) * rotPhaseSign
+	rotVec[0] = math.Sin(rotMagnitude) * math.Cos(rotPhase) * rotPhaseSign
 
 	if rotPhaseSign != 0 {
-		rotvec[1] = math.Sin(rotMagnitude) * math.Sin(rotPhase) * rotPhaseSign
+		rotVec[1] = math.Sin(rotMagnitude) * math.Sin(rotPhase) * rotPhaseSign
 	} else {
-		rotvec[1] = math.Sin(rotMagnitude) * delta.MousePos.Y / math.Abs(delta.MousePos.Y)
+		rotVec[1] = math.Sin(rotMagnitude) * delta.MousePos.Y / math.Abs(delta.MousePos.Y)
 		if rotPhase == 0 {
-			rotvec[1] = 0
+			rotVec[1] = 0
 		}
 	}
 
-	rotvec[2] = math.Sqrt(1 - rotvec[0]*rotvec[0] - rotvec[1]*rotvec[1])
+	rotVec[2] = math.Sqrt(1 - rotVec[0]*rotVec[0] - rotVec[1]*rotVec[1])
 
-	// Rotate with rotor based on 0,0,1 wedge rotvec
+	// Rotate with rotor based on 0,0,1 wedge rotVec
 	for i := range [3]bool{} {
-		rotatedMatrix[0][i] = -rotvec[0]*rotvec[0]*d.BasisMatrix[0][i] + rotvec[1]*rotvec[1]*d.BasisMatrix[0][i] + rotvec[2]*rotvec[2]*d.BasisMatrix[0][i] - 2*rotvec[0]*rotvec[1]*d.BasisMatrix[1][i] + 2*rotvec[0]*rotvec[2]*d.BasisMatrix[2][i]
-		rotatedMatrix[1][i] = rotvec[0]*rotvec[0]*d.BasisMatrix[1][i] - rotvec[1]*rotvec[1]*d.BasisMatrix[1][i] + rotvec[2]*rotvec[2]*d.BasisMatrix[1][i] - 2*rotvec[0]*rotvec[1]*d.BasisMatrix[0][i] + 2*rotvec[1]*rotvec[2]*d.BasisMatrix[2][i]
-		rotatedMatrix[2][i] = -rotvec[0]*rotvec[0]*d.BasisMatrix[2][i] - rotvec[1]*rotvec[1]*d.BasisMatrix[2][i] + rotvec[2]*rotvec[2]*d.BasisMatrix[2][i] - 2*rotvec[0]*rotvec[2]*d.BasisMatrix[0][i] - 2*rotvec[1]*rotvec[2]*d.BasisMatrix[1][i]
+		rotatedMatrix[0][i] = -rotVec[0]*rotVec[0]*d.BasisMatrix[0][i] + rotVec[1]*rotVec[1]*d.BasisMatrix[0][i] + rotVec[2]*rotVec[2]*d.BasisMatrix[0][i] - 2*rotVec[0]*rotVec[1]*d.BasisMatrix[1][i] + 2*rotVec[0]*rotVec[2]*d.BasisMatrix[2][i]
+		rotatedMatrix[1][i] = rotVec[0]*rotVec[0]*d.BasisMatrix[1][i] - rotVec[1]*rotVec[1]*d.BasisMatrix[1][i] + rotVec[2]*rotVec[2]*d.BasisMatrix[1][i] - 2*rotVec[0]*rotVec[1]*d.BasisMatrix[0][i] + 2*rotVec[1]*rotVec[2]*d.BasisMatrix[2][i]
+		rotatedMatrix[2][i] = -rotVec[0]*rotVec[0]*d.BasisMatrix[2][i] - rotVec[1]*rotVec[1]*d.BasisMatrix[2][i] + rotVec[2]*rotVec[2]*d.BasisMatrix[2][i] - 2*rotVec[0]*rotVec[2]*d.BasisMatrix[0][i] - 2*rotVec[1]*rotVec[2]*d.BasisMatrix[1][i]
 	}
 
 	d.BasisMatrix = rotatedMatrix
@@ -141,18 +141,18 @@ func (d *CurveDisplay) Speen(delta Event) {
 	rotatedMatrix := [3][3]float64{}
 	copy(rotatedMatrix[:], d.BasisMatrix[:])
 
-	rotvec := [3]float64{}
+	rotVec := [3]float64{}
 
-	rotvec[0] = math.Sin(delta.MousePos.X / 100)
-	rotvec[1] = math.Cos(delta.MousePos.X / 100)
-	rotvec[2] = 0
+	rotVec[0] = math.Sin(delta.MousePos.X / 100)
+	rotVec[1] = math.Cos(delta.MousePos.X / 100)
+	rotVec[2] = 0
 
-	// Rotate with rotor based on 0,1,0 wedge rotvec
+	// Rotate with rotor based on 0,1,0 wedge rotVec
 	// TODO: generalize this as its own function so it's not nearly-repeated from Handle()
 	for i := range [3]bool{} {
-		rotatedMatrix[0][i] = -rotvec[0]*rotvec[0]*d.BasisMatrix[0][i] + rotvec[1]*rotvec[1]*d.BasisMatrix[0][i] + rotvec[2]*rotvec[2]*d.BasisMatrix[0][i] + 2*rotvec[0]*rotvec[1]*d.BasisMatrix[1][i] - 2*rotvec[0]*rotvec[2]*d.BasisMatrix[2][i]
-		rotatedMatrix[1][i] = -rotvec[0]*rotvec[0]*d.BasisMatrix[1][i] + rotvec[1]*rotvec[1]*d.BasisMatrix[1][i] - rotvec[2]*rotvec[2]*d.BasisMatrix[1][i] - 2*rotvec[0]*rotvec[1]*d.BasisMatrix[0][i] - 2*rotvec[1]*rotvec[2]*d.BasisMatrix[2][i]
-		rotatedMatrix[2][i] = rotvec[0]*rotvec[0]*d.BasisMatrix[2][i] + rotvec[1]*rotvec[1]*d.BasisMatrix[2][i] - rotvec[2]*rotvec[2]*d.BasisMatrix[2][i] - 2*rotvec[0]*rotvec[2]*d.BasisMatrix[0][i] + 2*rotvec[1]*rotvec[2]*d.BasisMatrix[1][i]
+		rotatedMatrix[0][i] = -rotVec[0]*rotVec[0]*d.BasisMatrix[0][i] + rotVec[1]*rotVec[1]*d.BasisMatrix[0][i] + rotVec[2]*rotVec[2]*d.BasisMatrix[0][i] + 2*rotVec[0]*rotVec[1]*d.BasisMatrix[1][i] - 2*rotVec[0]*rotVec[2]*d.BasisMatrix[2][i]
+		rotatedMatrix[1][i] = -rotVec[0]*rotVec[0]*d.BasisMatrix[1][i] + rotVec[1]*rotVec[1]*d.BasisMatrix[1][i] - rotVec[2]*rotVec[2]*d.BasisMatrix[1][i] - 2*rotVec[0]*rotVec[1]*d.BasisMatrix[0][i] - 2*rotVec[1]*rotVec[2]*d.BasisMatrix[2][i]
+		rotatedMatrix[2][i] = rotVec[0]*rotVec[0]*d.BasisMatrix[2][i] + rotVec[1]*rotVec[1]*d.BasisMatrix[2][i] - rotVec[2]*rotVec[2]*d.BasisMatrix[2][i] - 2*rotVec[0]*rotVec[2]*d.BasisMatrix[0][i] + 2*rotVec[1]*rotVec[2]*d.BasisMatrix[1][i]
 	}
 
 	d.BasisMatrix = rotatedMatrix
