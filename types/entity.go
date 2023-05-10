@@ -5,12 +5,14 @@ import (
 
 	"github.com/faiface/pixel/imdraw"
 	"github.com/faiface/pixel/pixelgl"
+	"sync"
 )
 
 type Entities []Entity
 
 type Entity struct {
 	surface *imdraw.IMDraw
+	wg      *sync.WaitGroup
 
 	UpdateFunc func(time.Duration)
 	Children   Entities
@@ -54,8 +56,29 @@ func (entity *Entity) Handles(event *Event) bool {
 	return false
 }
 
-func (entity *Entity) Receive(event *Event) {
-	if entity.Handles(event) {
-		entity.Handle(event)
+func (e *Entity) Receive(event *Event) {
+	// TODO: This probably needs to be unwound so we can use the defer keyword to release
+	if e.Handles(event) {
+		event.Lock()
+		e.Handle(event)
+		event.Unlock()
 	}
+
+	// Don't echo down the tree if it's no longer needed
+	if event.StopPropagating {
+		return
+	}
+
+	// Otherwise, fire away
+	wg := &sync.WaitGroup{}
+
+	for _, c := range e.Children {
+		wg.Add(1)
+		go func(child *Entity) {
+			defer wg.Done()
+			child.Receive(event)
+		}(&c)
+	}
+
+	wg.Wait()
 }
