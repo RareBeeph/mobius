@@ -3,9 +3,10 @@ package types
 import (
 	"time"
 
+	"sync"
+
 	"github.com/faiface/pixel/imdraw"
 	"github.com/faiface/pixel/pixelgl"
-	"sync"
 )
 
 type Entities []Entity
@@ -70,15 +71,15 @@ func (e *Entity) Receive(event *Event) {
 	}
 
 	// Otherwise, fire away
-	wg := &sync.WaitGroup{}
+	e.wg = &sync.WaitGroup{}
 
 	for _, c := range e.Children {
-		wg.Add(1)
+		e.wg.Add(1)
 		go func(child *Entity) {
-			defer wg.Done()
+			defer e.wg.Done()
 			child.Receive(event)
 		}(&c)
 	}
 
-	wg.Wait()
+	e.wg.Wait()
 }

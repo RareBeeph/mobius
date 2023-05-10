@@ -63,14 +63,15 @@ func (d *CurveDisplay) Draw(window *pixelgl.Window) {
 	d.surface.Draw(window)
 }
 
-func (d *CurveDisplay) Receive(delta Event) {
+func (d *CurveDisplay) Receive(delta *Event) {
 	// Duplicate, but without this here it'd run the generic Entity Handles() which is always false
+	// Doesn't use the entity's new mutex stuff
 	if d.Handles(delta) {
 		d.Handle(delta)
 	}
 }
 
-func (d *CurveDisplay) Handles(delta Event) bool {
+func (d *CurveDisplay) Handles(delta *Event) bool {
 	if !d.Contains(delta.InitialPos) && !delta.Contains(pixelgl.KeyC) {
 		return false
 	}
@@ -80,7 +81,7 @@ func (d *CurveDisplay) Handles(delta Event) bool {
 	return true
 }
 
-func (d *CurveDisplay) Handle(delta Event) {
+func (d *CurveDisplay) Handle(delta *Event) {
 	if delta.Contains(pixelgl.KeyC) {
 		copy(d.BasisMatrix[:], DefaultBasisMatrix[:])
 		return
@@ -137,7 +138,7 @@ func (d *CurveDisplay) Handle(delta Event) {
 	d.BasisMatrix = rotatedMatrix
 }
 
-func (d *CurveDisplay) Speen(delta Event) {
+func (d *CurveDisplay) Speen(delta *Event) {
 	rotatedMatrix := [3][3]float64{}
 	copy(rotatedMatrix[:], d.BasisMatrix[:])
 
