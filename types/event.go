@@ -3,9 +3,15 @@ package types
 import (
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/pixelgl"
+
+	"sync"
 )
 
 type Event struct {
+	sync.Mutex
+
+	StopPropagating bool
+
 	MousePos   pixel.Vec
 	InitialPos pixel.Vec
 	Buttons    []pixelgl.Button
