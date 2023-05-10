@@ -7,18 +7,21 @@ import (
 	"github.com/faiface/pixel/pixelgl"
 )
 
+type Entities []Entity
+
 type Entity struct {
 	surface *imdraw.IMDraw
 
 	UpdateFunc func(time.Duration)
+	Children   Entities
 }
 
 type EventHandler interface {
 	Update(time.Duration)
 	Draw(*pixelgl.Window)
-	Handle(Event)
-	Handles(Event) bool
-	Receive(Event)
+	Handle(*Event)
+	Handles(*Event) bool
+	Receive(*Event)
 }
 
 type E = EventHandler
@@ -43,15 +46,15 @@ func (entity *Entity) Draw(window *pixelgl.Window) {
 	entity.surface.Draw(window) // As of writing this comment, this is never run. It should crash (null reference) if it were.
 }
 
-func (entity *Entity) Handle(event Event) {
+func (entity *Entity) Handle(event *Event) {
 
 }
 
-func (entity *Entity) Handles(event Event) bool {
+func (entity *Entity) Handles(event *Event) bool {
 	return false
 }
 
-func (entity *Entity) Receive(event Event) {
+func (entity *Entity) Receive(event *Event) {
 	if entity.Handles(event) {
 		entity.Handle(event)
 	}
