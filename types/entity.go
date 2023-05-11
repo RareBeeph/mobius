@@ -26,6 +26,7 @@ type EventHandler interface {
 	Handles(*Event) bool
 	GetWaitGroup() *sync.WaitGroup
 	GetChildren() Entities
+	GuardSurface()
 }
 
 type E = EventHandler
@@ -45,9 +46,24 @@ func (entity *Entity) Update(deltatime time.Duration) {
 	}
 }
 
+func Update(e E, deltatime time.Duration) {
+	e.Update(deltatime)
+	for _, c := range e.GetChildren() {
+		Update(c, deltatime)
+	}
+}
+
 func (entity *Entity) Draw(window *pixelgl.Window) {
 	entity.GuardSurface()
-	entity.surface.Draw(window) // As of writing this comment, this is never run. It should crash (null reference) if it were.
+	entity.surface.Draw(window)
+}
+
+func Draw(e E, window *pixelgl.Window) {
+	e.GuardSurface()
+	e.Draw(window)
+	for _, c := range e.GetChildren() {
+		Draw(c, window)
+	}
 }
 
 func (entity *Entity) Handle(event *Event) {

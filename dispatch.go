@@ -8,23 +8,23 @@ import (
 )
 
 type Dispatch struct {
-	Entities *types.Entities
+	Entities types.Entities
 }
 
 func (dispatch *Dispatch) Update(deltatime time.Duration) {
-	for _, e := range *dispatch.Entities {
-		e.Update(deltatime)
+	for _, e := range dispatch.Entities {
+		types.Update(e, deltatime)
 	}
 }
 
 func (dispatch *Dispatch) Handle(event *types.Event) {
-	for _, e := range *dispatch.Entities {
+	for _, e := range dispatch.Entities {
 		types.Receive(e, event)
 	}
 }
 
 func (dispatch *Dispatch) Draw(win *pixelgl.Window) {
-	for _, e := range *dispatch.Entities {
-		e.Draw(win)
+	for _, e := range dispatch.Entities {
+		types.Draw(e, win)
 	}
 }
