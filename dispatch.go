@@ -26,7 +26,7 @@ func (dispatch *Dispatch) Update(deltatime time.Duration) {
 
 func (dispatch *Dispatch) Handle(event *types.Event) {
 	for _, e := range *dispatch.Buttons {
-		e.Receive(event)
+		types.Receive(e, event)
 	}
 }
 

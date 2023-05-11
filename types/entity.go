@@ -24,7 +24,8 @@ type EventHandler interface {
 	Draw(*pixelgl.Window)
 	Handle(*Event)
 	Handles(*Event) bool
-	Receive(*Event)
+	GetWaitGroup() *sync.WaitGroup
+	GetChildren() Entities
 }
 
 type E = EventHandler
@@ -57,7 +58,7 @@ func (entity *Entity) Handles(event *Event) bool {
 	return false
 }
 
-func (e *Entity) Receive(event *Event) {
+func Receive(e E, event *Event) {
 	// TODO: This probably needs to be unwound so we can use the defer keyword to release
 	if e.Handles(event) {
 		event.Lock()
@@ -71,15 +72,25 @@ func (e *Entity) Receive(event *Event) {
 	}
 
 	// Otherwise, fire away
-	e.wg = &sync.WaitGroup{}
+	wg := e.GetWaitGroup()
+	children := e.GetChildren()
 
-	for _, c := range e.Children {
-		e.wg.Add(1)
+	for _, c := range children {
+		wg.Add(1)
 		go func(child *Entity) {
-			defer e.wg.Done()
-			child.Receive(event)
+			defer wg.Done()
+			Receive(child, event)
 		}(&c)
 	}
 
-	e.wg.Wait()
+	wg.Wait()
+}
+
+func (e *Entity) GetWaitGroup() *sync.WaitGroup {
+	e.wg = &sync.WaitGroup{} // Temp
+	return e.wg
+}
+
+func (e *Entity) GetChildren() Entities {
+	return e.Children
 }

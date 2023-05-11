@@ -63,14 +63,6 @@ func (d *CurveDisplay) Draw(window *pixelgl.Window) {
 	d.surface.Draw(window)
 }
 
-func (d *CurveDisplay) Receive(delta *Event) {
-	// Duplicate, but without this here it'd run the generic Entity Handles() which is always false
-	// Doesn't use the entity's new mutex stuff
-	if d.Handles(delta) {
-		d.Handle(delta)
-	}
-}
-
 func (d *CurveDisplay) Handles(delta *Event) bool {
 	if !d.Contains(delta.InitialPos) && !delta.Contains(pixelgl.KeyC) {
 		return false
