@@ -40,9 +40,8 @@ func run() {
 	var delta = types.Event{EventType: types.Drag}
 
 	entities.Initialize(win, &clicked) // pixelgl had to Run() to initialize a window to initialize entities
-	defaultDispatch := Dispatch{
-		Entities: &entities.Scene.Children, // AllEntities isn't initialized until entities.Initialize()
-	}
+
+	defaultDispatch := Dispatch{Entities: &entities.Scene.Children}
 
 	thisPos := win.MousePosition()
 	var lastPos pixel.Vec
