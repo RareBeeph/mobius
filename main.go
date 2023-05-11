@@ -36,7 +36,9 @@ func run() {
 		panic(err)
 	}
 
-	var clicked types.Event
+	var clicked = types.Event{EventType: types.Click}
+	var delta = types.Event{EventType: types.Drag}
+
 	entities.Initialize(win, &clicked) // pixelgl had to Run() to initialize a window to initialize entities
 	defaultDispatch := Dispatch{
 		Buttons:    entities.AllEntities, // AllEntities isn't initialized until entities.Initialize()
@@ -44,7 +46,6 @@ func run() {
 		Graph:      entities.Graph, // Temp
 	}
 
-	var delta types.Event
 	thisPos := win.MousePosition()
 	var lastPos pixel.Vec
 
@@ -63,7 +64,7 @@ func run() {
 
 		lastPos = thisPos
 		thisPos = win.MousePosition()
-		delta = types.Event{MousePos: (thisPos.Sub(lastPos)), InitialPos: delta.InitialPos}
+		delta.MouseVel = thisPos.Sub(lastPos)
 
 		clicked.Buttons = []pixelgl.Button{}
 		delta.Buttons = []pixelgl.Button{}
@@ -80,7 +81,7 @@ func run() {
 		defaultDispatch.Update(deltatime)
 		clicked.MousePos = win.MousePosition()
 		defaultDispatch.Handle(&clicked)
-		types.Receive(defaultDispatch.Graph, &delta) // Temp until my event framework can natively manage the distinction between a position and a deltapos
+		defaultDispatch.Handle(&delta) // Could be fused into clicked if events stored separate slices for clicked and held buttons
 
 		defaultDispatch.Draw(win) // Click indicators only work if update, then handle, then draw (or a rotation thereof)
 

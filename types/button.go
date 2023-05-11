@@ -15,6 +15,9 @@ func (b *Button) Handle(event *Event) {
 }
 
 func (b *Button) Handles(event *Event) bool {
+	if event.EventType != Click {
+		return false
+	}
 	if b.Contains(event.MousePos) && event.Contains(pixelgl.MouseButton1) {
 		return true
 	}

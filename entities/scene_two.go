@@ -9,7 +9,7 @@ import (
 
 func InitSceneTwo(win *pixelgl.Window, clicked *types.Event) {
 	SceneReturnButton.OnEvent = func() {
-		Initialize(win, clicked)
+		Initialize(win, clicked) // Note: resets the graph to its initial orientation, among other redone operations
 	}
 
 	*AllEntities = []types.CR{&SceneReturnButton, &ClickIndicator, &CollisionIndicator}

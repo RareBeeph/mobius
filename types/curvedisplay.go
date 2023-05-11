@@ -64,6 +64,9 @@ func (d *CurveDisplay) Draw(window *pixelgl.Window) {
 }
 
 func (d *CurveDisplay) Handles(delta *Event) bool {
+	if delta.EventType != Drag {
+		return false
+	}
 	if !d.Contains(delta.InitialPos) && !delta.Contains(pixelgl.KeyC) {
 		return false
 	}
@@ -87,10 +90,10 @@ func (d *CurveDisplay) Handle(delta *Event) {
 	copy(rotatedMatrix[:], d.BasisMatrix[:])
 
 	var rotPhase float64
-	if delta.MousePos.X != 0 {
-		rotPhase = math.Atan(delta.MousePos.Y / delta.MousePos.X)
-	} else if delta.MousePos.Y != 0 {
-		rotPhase = math.Pi / 2 * delta.MousePos.Y / math.Abs(delta.MousePos.Y)
+	if delta.MouseVel.X != 0 {
+		rotPhase = math.Atan(delta.MouseVel.Y / delta.MouseVel.X)
+	} else if delta.MouseVel.Y != 0 {
+		rotPhase = math.Pi / 2 * delta.MouseVel.Y / math.Abs(delta.MouseVel.Y)
 	} else {
 		return
 	}
@@ -98,11 +101,11 @@ func (d *CurveDisplay) Handle(delta *Event) {
 		rotPhase = 0
 	}
 
-	rotMagnitude := delta.MousePos.Len() / 100
+	rotMagnitude := delta.MouseVel.Len() / 100
 
 	var rotPhaseSign float64 = 0
-	if delta.MousePos.X != 0 {
-		rotPhaseSign = delta.MousePos.X / math.Abs(delta.MousePos.X)
+	if delta.MouseVel.X != 0 {
+		rotPhaseSign = delta.MouseVel.X / math.Abs(delta.MouseVel.X)
 	}
 
 	rotVec := [3]float64{}
@@ -112,7 +115,7 @@ func (d *CurveDisplay) Handle(delta *Event) {
 	if rotPhaseSign != 0 {
 		rotVec[1] = math.Sin(rotMagnitude) * math.Sin(rotPhase) * rotPhaseSign
 	} else {
-		rotVec[1] = math.Sin(rotMagnitude) * delta.MousePos.Y / math.Abs(delta.MousePos.Y)
+		rotVec[1] = math.Sin(rotMagnitude) * delta.MouseVel.Y / math.Abs(delta.MouseVel.Y)
 		if rotPhase == 0 {
 			rotVec[1] = 0
 		}
@@ -136,8 +139,8 @@ func (d *CurveDisplay) Speen(delta *Event) {
 
 	rotVec := [3]float64{}
 
-	rotVec[0] = math.Sin(delta.MousePos.X / 100)
-	rotVec[1] = math.Cos(delta.MousePos.X / 100)
+	rotVec[0] = math.Sin(delta.MouseVel.X / 100)
+	rotVec[1] = math.Cos(delta.MouseVel.X / 100)
 	rotVec[2] = 0
 
 	// Rotate with rotor based on 0,1,0 wedge rotVec

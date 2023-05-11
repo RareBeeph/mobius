@@ -28,6 +28,7 @@ func (dispatch *Dispatch) Handle(event *types.Event) {
 	for _, e := range *dispatch.Buttons {
 		types.Receive(e, event)
 	}
+	types.Receive(dispatch.Graph, event)
 }
 
 func (dispatch *Dispatch) Draw(win *pixelgl.Window) {

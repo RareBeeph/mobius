@@ -12,10 +12,19 @@ type Event struct {
 
 	StopPropagating bool
 
+	EventType  EType
 	MousePos   pixel.Vec
+	MouseVel   pixel.Vec
 	InitialPos pixel.Vec
 	Buttons    []pixelgl.Button
 }
+
+type EType int
+
+const (
+	Click EType = iota
+	Drag
+)
 
 func (e *Event) Contains(b pixelgl.Button) bool {
 	for _, t := range e.Buttons {
