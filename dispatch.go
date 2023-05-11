@@ -8,35 +8,23 @@ import (
 )
 
 type Dispatch struct {
-	Buttons    *[]types.CR         // Collision indicator needed to find the color of all buttons, so this can't be []types.E
-	TextFields []*types.FpsCounter // Only one text object exists so far
-	Graph      *types.CurveDisplay // Temp
+	Entities *types.Entities
 }
 
-// These feel a bit repetitive
 func (dispatch *Dispatch) Update(deltatime time.Duration) {
-	dispatch.Graph.Update(deltatime)
-	for _, e := range *dispatch.Buttons {
+	for _, e := range *dispatch.Entities {
 		e.Update(deltatime)
-	}
-	for _, t := range dispatch.TextFields {
-		t.Update(deltatime)
 	}
 }
 
 func (dispatch *Dispatch) Handle(event *types.Event) {
-	for _, e := range *dispatch.Buttons {
+	for _, e := range *dispatch.Entities {
 		types.Receive(e, event)
 	}
-	types.Receive(dispatch.Graph, event)
 }
 
 func (dispatch *Dispatch) Draw(win *pixelgl.Window) {
-	dispatch.Graph.Draw(win) // Temp
-	for _, e := range *dispatch.Buttons {
+	for _, e := range *dispatch.Entities {
 		e.Draw(win)
-	}
-	for _, t := range dispatch.TextFields {
-		t.Draw(win)
 	}
 }

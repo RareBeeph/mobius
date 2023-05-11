@@ -13,10 +13,6 @@ import (
 	"golang.org/x/image/font/basicfont"
 )
 
-func init() {
-	AllEntities = &[]types.CR{}
-}
-
 func Initialize(win *pixelgl.Window, clicked *types.Event) {
 	// Specifically not init because pixelgl needs to Run() before this
 
@@ -32,10 +28,11 @@ func Initialize(win *pixelgl.Window, clicked *types.Event) {
 		ClickIndicator.Bounds = pixel.R(0, 10, 10, 20)
 	}
 
-	*AllEntities = []types.CR{&SaveButton, &ClickIndicator, &CollisionIndicator, &ControlRects[0], &ControlRects[1], TestRects[0], TestRects[1], &SceneButton}
+	(*Scene).Children = []types.E{&SaveButton, &ClickIndicator, &CollisionIndicator, &ControlRects[0], &ControlRects[1], TestRects[0], TestRects[1], &SceneButton, &FpsC, Graph}
 
+	allButtons := []types.CR{&SaveButton, &ClickIndicator, &CollisionIndicator, &ControlRects[0], &ControlRects[1], TestRects[0], TestRects[1], &SceneButton}
 	CollisionIndicator.OnEvent = func() {
-		for i, e := range *AllEntities {
+		for i, e := range allButtons {
 			if e.Contains(clicked.MousePos) {
 				CollisionIndicator.Bounds = pixel.R(float64(10*i), 0, float64(10*i+10), 10)
 				CollisionIndicator.Color = e.GetColor()
@@ -74,11 +71,11 @@ func Initialize(win *pixelgl.Window, clicked *types.Event) {
 	}
 
 	SceneButton.OnEvent = func() {
-		InitSceneTwo(win, clicked)
+		InitSceneTwo(win, clicked) // Does a couple things redundantly
 	}
 }
 
-var AllEntities *[]types.CR
+var Scene = &types.Entity{}
 var AllTexts []*types.FpsCounter
 var Graph = &types.CurveDisplay{
 	Center: pixel.V(150, 500),

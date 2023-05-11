@@ -9,7 +9,7 @@ import (
 	"github.com/faiface/pixel/pixelgl"
 )
 
-type Entities []Entity
+type Entities []E
 
 type Entity struct {
 	surface *imdraw.IMDraw
@@ -77,10 +77,10 @@ func Receive(e E, event *Event) {
 
 	for _, c := range children {
 		wg.Add(1)
-		go func(child *Entity) {
+		go func(child E) {
 			defer wg.Done()
 			Receive(child, event)
-		}(&c)
+		}(c)
 	}
 
 	wg.Wait()

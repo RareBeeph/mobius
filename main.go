@@ -41,9 +41,7 @@ func run() {
 
 	entities.Initialize(win, &clicked) // pixelgl had to Run() to initialize a window to initialize entities
 	defaultDispatch := Dispatch{
-		Buttons:    entities.AllEntities, // AllEntities isn't initialized until entities.Initialize()
-		TextFields: entities.AllTexts,
-		Graph:      entities.Graph, // Temp
+		Entities: &entities.Scene.Children, // AllEntities isn't initialized until entities.Initialize()
 	}
 
 	thisPos := win.MousePosition()

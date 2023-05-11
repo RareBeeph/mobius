@@ -8,12 +8,18 @@ import (
 )
 
 func InitSceneTwo(win *pixelgl.Window, clicked *types.Event) {
-	SceneReturnButton.OnEvent = func() {
-		Initialize(win, clicked) // Note: resets the graph to its initial orientation, among other redone operations
-	}
+	*Scene1 = *Scene
+	Scene2.Children = []types.E{&SceneReturnButton, &ClickIndicator, &CollisionIndicator, &FpsC}
 
-	*AllEntities = []types.CR{&SceneReturnButton, &ClickIndicator, &CollisionIndicator}
+	*Scene = *Scene2
+
+	SceneReturnButton.OnEvent = func() {
+		*Scene = *Scene1
+	}
 }
+
+var Scene1 = &types.Entity{}
+var Scene2 = &types.Entity{}
 
 var SceneReturnButton = types.Button{
 	ColoredRect: types.ColoredRect{Bounds: pixel.R(800, 450, 950, 550), Color: pixel.RGB(0.6, 0.6, 0.6)},
