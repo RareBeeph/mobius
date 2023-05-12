@@ -22,7 +22,7 @@ func Initialize(win *pixelgl.Window, clicked *types.Event) {
 		ClickIndicator.Color.A = 0
 		ClickIndicator.Bounds = win.Bounds()
 	}
-	ClickIndicator.OnEvent = func() {
+	ClickIndicator.OnEvent = func(e *types.Event) {
 		ClickIndicator.Color.G = 1
 		ClickIndicator.Color.A = 1
 		ClickIndicator.Bounds = pixel.R(0, 10, 10, 20)
@@ -31,7 +31,7 @@ func Initialize(win *pixelgl.Window, clicked *types.Event) {
 	(*Scene).Children = []types.E{&SaveButton, &ClickIndicator, &CollisionIndicator, &ControlRects[0], &ControlRects[1], TestRects[0], TestRects[1], &SceneButton, &FpsC, Graph}
 
 	allButtons := []types.CR{&SaveButton, &ClickIndicator, &CollisionIndicator, &ControlRects[0], &ControlRects[1], TestRects[0], TestRects[1], &SceneButton}
-	CollisionIndicator.OnEvent = func() {
+	CollisionIndicator.OnEvent = func(e *types.Event) {
 		for i, e := range allButtons {
 			if e.Contains(clicked.MousePos) {
 				CollisionIndicator.Bounds = pixel.R(float64(10*i), 0, float64(10*i+10), 10)
@@ -70,8 +70,8 @@ func Initialize(win *pixelgl.Window, clicked *types.Event) {
 		}
 	}
 
-	SceneButton.OnEvent = func() {
-		InitSceneTwo(win, clicked) // Does a couple things redundantly
+	SceneButton.OnEvent = func(e *types.Event) {
+		SwitchToSceneTwo(win, clicked) // Does a couple things redundantly
 	}
 }
 
@@ -90,7 +90,7 @@ var FpsC types.FpsCounter
 
 var SaveButton = types.Button{
 	ColoredRect: types.ColoredRect{Bounds: pixel.R(400, 400, 700, 600), Color: pixel.RGB(0.8, 0.8, 0.8)},
-	OnEvent: func() {
+	OnEvent: func(e *types.Event) {
 		m := query.Midpoint
 
 		if len(ChosenTestColors) > 0 {

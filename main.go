@@ -62,6 +62,7 @@ func run() {
 		lastPos = thisPos
 		thisPos = win.MousePosition()
 		delta.MouseVel = thisPos.Sub(lastPos)
+		delta.MousePos = thisPos
 
 		clicked.Buttons = []pixelgl.Button{}
 		delta.Buttons = []pixelgl.Button{}
