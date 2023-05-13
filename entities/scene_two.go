@@ -2,6 +2,8 @@ package entities
 
 import (
 	"colorspacer/types"
+	"log"
+	"math"
 	"time"
 
 	"github.com/faiface/pixel"
@@ -15,7 +17,7 @@ func SwitchToSceneTwo(win *pixelgl.Window, clicked *types.Event) {
 	}
 
 	*Scene1 = *Scene
-	Scene2.Children = []types.E{&SceneReturnButton, &ClickIndicator, &CollisionIndicator, &S2ControlColor, &S2TestColor, &S2Slider, &S2Control2, &FpsC}
+	Scene2.Children = []types.E{&SceneReturnButton, &ClickIndicator, &CollisionIndicator, &S2ControlColor, &S2TestColor, &S2Slider, &S2Control2, &ProgressButton, &S2Control3, &MetricLogger, &FpsC}
 
 	*Scene = *Scene2
 
@@ -25,8 +27,10 @@ func SwitchToSceneTwo(win *pixelgl.Window, clicked *types.Event) {
 }
 
 func InitSceneTwo(win *pixelgl.Window, clicked *types.Event) {
+	metric[0][0] = 1
+
 	sliderRange := S2Slider.ClampMax - S2Slider.ClampMin
-	centerPos := S2Slider.ClampMin + S2Slider.Color.G*sliderRange
+	centerPos := S2Slider.ClampMin + S2Slider.Color.R*sliderRange
 
 	S2Slider.Bounds = pixel.R(centerPos-20, 130, centerPos+20, 170)
 
@@ -35,11 +39,19 @@ func InitSceneTwo(win *pixelgl.Window, clicked *types.Event) {
 		S2Slider.Bounds.Max.X = e.MousePos.X + 20
 		S2Slider.Clamp()
 
-		S2Slider.Color.G = (S2Slider.Bounds.Center().X - S2Slider.ClampMin) / sliderRange
+		colorAmount := (S2Slider.Bounds.Center().X - S2Slider.ClampMin) / sliderRange
+		S2Slider.Color.R = colorAmount
 	}
 
 	S2TestColor.UpdateFunc = func(dt time.Duration) {
 		S2TestColor.Color = S2Slider.Color
+	}
+
+	ProgressButton.OnEvent = func(e *types.Event) {
+		// S2Control2 is +green
+		log.Println((S2Slider.Color.R - S2ControlColor.Color.R) / coloroffset)
+		metric[1][1] = math.Pow((S2Slider.Color.R-S2ControlColor.Color.R)/coloroffset, 2)
+		g33()
 	}
 }
 
@@ -54,20 +66,23 @@ var SceneReturnButton = types.Button{
 var S2TestColor = types.ColoredRect{
 	Bounds: pixel.R(400, 200, 500, 300),
 	Color:  S2ControlColor.Color,
-	Entity: types.Entity{
-		UpdateFunc: func(dt time.Duration) {
-
-		}},
 }
 
+var coloroffset = 0.05 // Higher means more proportionally reliable measurements (in theory), but a worse approximation of the tangent space
+
 var S2ControlColor = types.ColoredRect{
-	Bounds: pixel.R(300, 200, 400, 400),
-	Color:  chooseControlColor(),
+	Bounds: pixel.R(300, 200, 400, 300),
+	Color:  chooseControlColor().Scaled(0.8).Add(pixel.RGB(0.1, 0.1, 0.1)),
 }
 
 var S2Control2 = types.ColoredRect{
 	Bounds: pixel.R(400, 300, 500, 400),
-	Color:  S2ControlColor.Color.Add(pixel.RGB(0.05, 0, 0)), // Note: unclamped
+	Color:  S2Control3.Color.Add(pixel.RGB(0, coloroffset, 0)), // Note: unclamped, and should actually be a constant
+}
+
+var S2Control3 = types.ColoredRect{
+	Bounds: pixel.R(300, 300, 400, 400),
+	Color:  S2ControlColor.Color, // Should actually be a constant
 }
 
 var S2Slider = types.Slider{
@@ -77,6 +92,25 @@ var S2Slider = types.Slider{
 		},
 		EventTypeHandled: types.Drag,
 	},
-	ClampMin: 300,
-	ClampMax: 500,
+	ClampMin: 100,
+	ClampMax: 700,
 }
+
+var ProgressButton = types.Button{
+	ColoredRect: types.ColoredRect{
+		Bounds: pixel.R(350, 500, 550, 600),
+		Color:  pixel.RGB(0.8, 0.8, 0.8),
+	},
+}
+
+var MetricLogger = types.Button{
+	ColoredRect: types.ColoredRect{
+		Bounds: pixel.R(600, 500, 760, 600),
+		Color:  pixel.RGB(0.8, 0.8, 0.8),
+	},
+	OnEvent: func(e *types.Event) {
+		log.Print(metric)
+	},
+}
+
+var metric [3][3]float64
