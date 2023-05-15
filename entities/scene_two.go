@@ -28,6 +28,7 @@ func SwitchToSceneTwo(win *pixelgl.Window, clicked *types.Event) {
 
 func InitSceneTwo(win *pixelgl.Window, clicked *types.Event) {
 	metric[0][0] = 1
+	lengths[0][0] = 1
 
 	sliderRange := S2Slider.ClampMax - S2Slider.ClampMin
 	centerPos := S2Slider.ClampMin + S2Slider.Color.R*sliderRange
@@ -47,12 +48,7 @@ func InitSceneTwo(win *pixelgl.Window, clicked *types.Event) {
 		S2TestColor.Color = S2Slider.Color
 	}
 
-	ProgressButton.OnEvent = func(e *types.Event) {
-		// S2Control2 is +green
-		log.Println((S2Slider.Color.R - S2ControlColor.Color.R) / coloroffset)
-		metric[1][1] = math.Pow((S2Slider.Color.R-S2ControlColor.Color.R)/coloroffset, 2)
-		g33()
-	}
+	measureMetric(1, 1, 0)
 }
 
 var sceneTwoInitialized = false
@@ -109,7 +105,15 @@ var MetricLogger = types.Button{
 		Color:  pixel.RGB(0.8, 0.8, 0.8),
 	},
 	OnEvent: func(e *types.Event) {
-		log.Print(metric)
+		log.Print("Metric: ")
+		log.Println(metric)
+
+		var modifiedAngles [3]float64
+		for i := range angles {
+			modifiedAngles[i] = angles[i] * 180 / math.Pi
+		}
+		log.Print("Angles (degrees): ")
+		log.Println(modifiedAngles)
 	},
 }
 

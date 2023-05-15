@@ -8,77 +8,92 @@ import (
 	"github.com/faiface/pixel"
 )
 
-func g33() {
-	// Control2 is +blue
-	S2Control2.Color = S2Control3.Color.Add(pixel.RGB(0, 0, coloroffset))
-
-	ProgressButton.OnEvent = func(e *types.Event) {
-		log.Println((S2Slider.Color.R - S2ControlColor.Color.R) / coloroffset)
-		// One step in blue (as exemplified by control colors) == some number of steps in red; square that
-		metric[2][2] = math.Pow((S2Slider.Color.R-S2ControlColor.Color.R)/coloroffset, 2) // Might not work when comparing locations
-		g12()
-	}
-}
-
-func g12() {
-	// Control2 is +red -green
-	S2Control2.Color = S2Control3.Color.Add(pixel.RGB(coloroffset, -coloroffset, 0))
-
-	ProgressButton.OnEvent = func(e *types.Event) {
-		// R dot G = -1/2 * ((R-G)^2 - R^2 - G^2)
-		// R-G = (S2Slider.Color.B-S2ControlColor.Color.B)/coloroffset*sqrt(metric[2][2])
-		// R^2 = metric[0][0]
-		// G^2 = metric[1][1]
-		log.Println((S2Slider.Color.R - S2ControlColor.Color.R) / coloroffset * math.Sqrt(metric[0][0]))
-		metric[0][1] = -0.5 * (math.Pow((S2Slider.Color.R-S2ControlColor.Color.R)/coloroffset, 2)*metric[0][0] - metric[0][0] - metric[1][1])
-		metric[1][0] = metric[0][1]
-		g13()
-	}
-}
-
-func g13() {
-	// Control2 is +red -blue
-	S2Control2.Color = S2Control3.Color.Add(pixel.RGB(coloroffset, 0, -coloroffset))
-
-	ProgressButton.OnEvent = func(e *types.Event) {
-		log.Println((S2Slider.Color.R - S2ControlColor.Color.R) / coloroffset * math.Sqrt(metric[0][0]))
-		metric[0][2] = -0.5 * (math.Pow((S2Slider.Color.R-S2ControlColor.Color.R)/coloroffset, 2)*metric[0][0] - metric[0][0] - metric[2][2])
-		metric[2][0] = metric[0][2]
-		g23()
-	}
-}
-
-func g23() {
-	// Control2 is +green -blue
-	S2Control2.Color = S2Control3.Color.Add(pixel.RGB(0, coloroffset, -coloroffset))
-
-	ProgressButton.OnEvent = func(e *types.Event) {
-		log.Println((S2Slider.Color.R - S2ControlColor.Color.R) / coloroffset * math.Sqrt(metric[0][0]))
-		metric[1][2] = -0.5 * (math.Pow((S2Slider.Color.R-S2ControlColor.Color.R)/coloroffset, 2)*metric[0][0] - metric[1][1] - metric[2][2])
-		metric[2][1] = metric[1][2]
-
+func measureMetric(i int, j int, timesLooped int) {
+	if i < 0 || j < 0 || timesLooped < 0 {
+		log.Println("Negative arguments given to measureMetric; this should never happen")
+		return
+	} else if j == 3 && i == 3 {
+		log.Println("Switching to measuring diagonals")
+		i = 0
+		j = 1
+	} else if i == 0 && j == 3 {
+		log.Println("Switching to measuring +G-B")
+		i = 1
+		j = 2
+	} else if i == 1 && j == 3 {
 		if metricInvalid() {
 			log.Println("Metric invalid:")
 			log.Println(metric)
-			g22()
+		}
+		log.Println("Looping")
+		i = 0
+		j = 0
+		timesLooped++
+	} else if i > 2 || j > 2 {
+		log.Println("Excessive arguments given to g(i,j); this should never happen")
+	}
+
+	toAdd := []float64{0, 0, 0}
+	toAdd[i] = coloroffset
+	if j != i {
+		toAdd[j] = -coloroffset
+	}
+	S2Control2.Color = S2Control3.Color.Add(pixel.RGB(toAdd[0], toAdd[1], toAdd[2]))
+
+	ProgressButton.OnEvent = func(e *types.Event) {
+		lengths[i][j] *= float64(timesLooped)
+		lengths[i][j] += math.Abs((S2Slider.Color.R - S2ControlColor.Color.R) / coloroffset /* * math.Sqrt(metric[0][0]) */)
+		lengths[i][j] /= float64(timesLooped + 1)
+
+		calculateAngles()
+
+		log.Println(lengths[i][j])
+		if i == j {
+			metric[i][j] = math.Pow(lengths[i][j], 2)
+
+			measureMetric(i+1, j+1, timesLooped)
+		} else {
+			metric[i][j] = -0.5 * (math.Pow(lengths[i][j], 2) /* *metric[0][0] */ - metric[i][i] - metric[j][j])
+			metric[j][i] = metric[i][j]
+
+			measureMetric(i, j+1, timesLooped)
 		}
 	}
 }
 
-func g22() {
-	// Control2 is +green
-	S2Control2.Color = S2Control3.Color.Add(pixel.RGB(0, coloroffset, 0))
-
-	ProgressButton.OnEvent = func(e *types.Event) {
-		log.Println((S2Slider.Color.R - S2ControlColor.Color.R) / coloroffset)
-		metric[1][1] = math.Pow((S2Slider.Color.R-S2ControlColor.Color.R)/coloroffset, 2) // Might not work when comparing locations
-		g33()
-	}
-}
-
 func metricInvalid() bool {
-	if metric[1][2]*metric[1][2] >= metric[1][1]*metric[2][2] || metric[0][2]*metric[0][2] >= metric[0][0]*metric[2][2] || metric[0][1]*metric[0][1] >= metric[0][0]*metric[1][1] {
+	// TODO: simplify these conditions
+
+	// This check was previously done based on the triangle inequality with metric elements, but I missed a condition. This is easier.
+	for i := range angles {
+		if !(angles[i] == 0 || angles[i] < 0 || angles[i] > 0) {
+			log.Println("Metric invalid: NaN angles")
+			log.Println(angles)
+			return true
+		}
+	}
+
+	var modifiedAngles [3]float64
+	// TODO: make sure this is a valid formulation of the spherical triangle inequality for all angles greater than pi/2
+	// I think it is but I'm not actually 100%
+	for i := range angles {
+		modifiedAngles[i] = (-math.Abs(angles[i]-math.Pi/2) + math.Pi/2)
+	}
+	if modifiedAngles[0]+modifiedAngles[1] < modifiedAngles[2] || modifiedAngles[0]+modifiedAngles[2] < modifiedAngles[1] || modifiedAngles[1]+modifiedAngles[2] < modifiedAngles[0] {
+		log.Println("Metric invalid: Unsatisfiable angular constraints")
+		log.Println(modifiedAngles)
 		return true
 	}
+
 	return false
 }
+
+func calculateAngles() {
+	// TODO: rework this
+	angles[0] = math.Acos(math.Pow(lengths[0][1], 2) * math.Pow(lengths[0][0], 2) * math.Pow(lengths[1][1], 2) / (-2 * lengths[0][0] * lengths[1][1]))
+	angles[1] = math.Acos(math.Pow(lengths[0][2], 2) * math.Pow(lengths[0][0], 2) * math.Pow(lengths[2][2], 2) / (-2 * lengths[0][0] * lengths[2][2]))
+	angles[2] = math.Acos(math.Pow(lengths[1][2], 2) * math.Pow(lengths[1][1], 2) * math.Pow(lengths[2][2], 2) / (-2 * lengths[1][1] * lengths[2][2]))
+}
+
+var lengths [3][3]float64
+var angles [3]float64
