@@ -66,7 +66,7 @@ func metricInvalid() bool {
 
 	// This check was previously done based on the triangle inequality with metric elements, but I missed a condition. This is easier.
 	for i := range angles {
-		if !(angles[i] == 0 || angles[i] < 0 || angles[i] > 0) {
+		if math.IsNaN(angles[i]) {
 			log.Println("Metric invalid: NaN angles")
 			log.Println(angles)
 			return true
