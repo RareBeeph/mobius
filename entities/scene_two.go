@@ -51,7 +51,7 @@ func InitSceneTwo(win *pixelgl.Window, clicked *types.Event) {
 	MetricGraph.CenterCol = S2ControlColor.Color
 	copy(MetricGraph.BasisMatrix[:], types.DefaultBasisMatrix[:])
 
-	measureMetric(1, 1, 0)
+	measureMetric(0, 0, 0)
 }
 
 var sceneTwoInitialized = false
@@ -67,7 +67,7 @@ var S2TestColor = types.ColoredRect{
 	Color:  S2ControlColor.Color,
 }
 
-var coloroffset = 0.1 // Higher means more proportionally reliable measurements (in theory), but a worse approximation of the tangent space
+var coloroffset = 0.05 // Higher means more proportionally reliable measurements (in theory), but a worse approximation of the tangent space
 
 var S2ControlColor = types.ColoredRect{
 	Bounds: pixel.R(300, 200, 400, 300),

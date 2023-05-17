@@ -38,16 +38,33 @@ func measureMetric(i int, j int, timesLooped int) {
 	if j != i {
 		toAdd[j] = -coloroffset
 	}
+
+	tempCC3 := S2Control3.Color
+	if i == 0 && j == 0 {
+		S2Control3.Color = pixel.RGB(0.5, 0.5, 0.5)
+		toAdd[1] = coloroffset
+		toAdd[2] = coloroffset
+	}
+
 	S2Control2.Color = S2Control3.Color.Add(pixel.RGB(toAdd[0], toAdd[1], toAdd[2]))
 
 	ProgressButton.OnEvent = func(e *types.Event) {
+
 		lengths[i][j] *= float64(timesLooped)
-		lengths[i][j] += math.Abs((S2Slider.Color.R - S2ControlColor.Color.R) / coloroffset /* * math.Sqrt(metric[0][0]) */)
+		if i == 0 && j == 0 {
+			// length of red in terms of gray (Gy/R), as reciprocal of length of gray in terms of red (R/Gy)
+			lengths[i][j] += math.Abs(coloroffset / (S2Slider.Color.R - S2ControlColor.Color.R))
+		} else {
+			// length of X in terms of gray (Gy/X), as length of X in terms of red times length of red in terms of gray ((R/X)*(Gy/R))
+			lengths[i][j] += math.Abs((S2Slider.Color.R - S2ControlColor.Color.R) * lengths[0][0] / coloroffset)
+		}
 		lengths[i][j] /= float64(timesLooped + 1)
 
 		copy(MetricGraph.Lengths[:], lengths[:])
 
 		calculateAngles()
+
+		S2Control3.Color = tempCC3
 
 		log.Println(lengths[i][j])
 		if i == j {
@@ -55,7 +72,7 @@ func measureMetric(i int, j int, timesLooped int) {
 
 			measureMetric(i+1, j+1, timesLooped)
 		} else {
-			metric[i][j] = -0.5 * (math.Pow(lengths[i][j], 2) /* *metric[0][0] */ - metric[i][i] - metric[j][j])
+			metric[i][j] = -0.5 * (math.Pow(lengths[i][j], 2) - metric[i][i] - metric[j][j])
 			metric[j][i] = metric[i][j]
 
 			measureMetric(i, j+1, timesLooped)
