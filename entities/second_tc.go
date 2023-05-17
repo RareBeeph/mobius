@@ -41,6 +41,8 @@ func measureMetric(i int, j int, timesLooped int) {
 
 	tempCC3 := S2Control3.Color
 	if i == 0 && j == 0 {
+		// Special case: when testing red's length, compare against a constant pair of grays
+		// This should make metrics for different locations in color space directly comparable
 		S2Control3.Color = pixel.RGB(0.5, 0.5, 0.5)
 		toAdd[1] = coloroffset
 		toAdd[2] = coloroffset
@@ -49,11 +51,13 @@ func measureMetric(i int, j int, timesLooped int) {
 	S2Control2.Color = S2Control3.Color.Add(pixel.RGB(toAdd[0], toAdd[1], toAdd[2]))
 
 	ProgressButton.OnEvent = func(e *types.Event) {
-
 		lengths[i][j] *= float64(timesLooped)
 		if i == 0 && j == 0 {
 			// length of red in terms of gray (Gy/R), as reciprocal of length of gray in terms of red (R/Gy)
 			lengths[i][j] += math.Abs(coloroffset / (S2Slider.Color.R - S2ControlColor.Color.R))
+
+			// revert control color. probably doable just by setting to the first control color
+			S2Control3.Color = tempCC3
 		} else {
 			// length of X in terms of gray (Gy/X), as length of X in terms of red times length of red in terms of gray ((R/X)*(Gy/R))
 			lengths[i][j] += math.Abs((S2Slider.Color.R - S2ControlColor.Color.R) * lengths[0][0] / coloroffset)
@@ -62,19 +66,23 @@ func measureMetric(i int, j int, timesLooped int) {
 
 		copy(MetricGraph.Lengths[:], lengths[:])
 
-		calculateAngles()
-
-		S2Control3.Color = tempCC3
+		angles = calculateAngles()
 
 		log.Println(lengths[i][j])
 		if i == j {
+			// Dot product of a vector with itself is its length squared
 			metric[i][j] = math.Pow(lengths[i][j], 2)
 
+			// On progression button pressed, "recurse", testing the next diagonal entry i+1==j+1
+			// (Overflow will be corrected)
 			measureMetric(i+1, j+1, timesLooped)
 		} else {
+			// Dot product of a vector with another, as a function of their lengths (rearranged law of cosines)
 			metric[i][j] = -0.5 * (math.Pow(lengths[i][j], 2) - metric[i][i] - metric[j][j])
 			metric[j][i] = metric[i][j]
 
+			// On progression button pressed, "recurse", testing the next off-diagonal entry
+			// (Overflow will be corrected)
 			measureMetric(i, j+1, timesLooped)
 		}
 	}
@@ -95,6 +103,7 @@ func metricInvalid() bool {
 	var modifiedAngles [3]float64
 	// TODO: make sure this is a valid formulation of the spherical triangle inequality for all angles greater than pi/2
 	// I think it is but I'm not actually 100%
+	// Consider using the IsNaN formulation used in metricdisplay.go; consider consolidating into one implementation
 	for i := range angles {
 		modifiedAngles[i] = (-math.Abs(angles[i]-math.Pi/2) + math.Pi/2)
 	}
@@ -107,11 +116,13 @@ func metricInvalid() bool {
 	return false
 }
 
-func calculateAngles() {
-	// TODO: rework this
-	angles[0] = math.Acos((math.Pow(lengths[0][1], 2) - math.Pow(lengths[0][0], 2) - math.Pow(lengths[1][1], 2)) / (-2 * lengths[0][0] * lengths[1][1]))
-	angles[1] = math.Acos((math.Pow(lengths[0][2], 2) - math.Pow(lengths[0][0], 2) - math.Pow(lengths[2][2], 2)) / (-2 * lengths[0][0] * lengths[2][2]))
-	angles[2] = math.Acos((math.Pow(lengths[1][2], 2) - math.Pow(lengths[1][1], 2) - math.Pow(lengths[2][2], 2)) / (-2 * lengths[1][1] * lengths[2][2]))
+func calculateAngles() (out [3]float64) {
+	for i, j := range [][]int{{0, 1}, {0, 2}, {1, 2}} {
+		// TODO: find a way to make this not go off the screen
+		// Rearranged law of cosines to solve for angle
+		out[i] = math.Acos((math.Pow(lengths[j[0]][j[1]], 2) - math.Pow(lengths[j[0]][j[0]], 2) - math.Pow(lengths[j[1]][j[1]], 2)) / (-2 * lengths[j[0]][j[0]] * lengths[j[1]][j[1]]))
+	}
+	return out
 }
 
 var lengths [3][3]float64

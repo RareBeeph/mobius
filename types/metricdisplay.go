@@ -25,10 +25,13 @@ func (d *MetricDisplay) Draw(window *pixelgl.Window) {
 		}
 	}
 
+	// Use 3*d.ColorOffset to exaggerate the visual
+	// TODO: set the exaggeration factor dynamically
 	vertexCols := []pixel.RGBA{d.CenterCol,
-		d.CenterCol.Add(pixel.RGB(2*d.ColorOffset*d.Lengths[0][0], 0, 0)),
-		d.CenterCol.Add(pixel.RGB(0, 2*d.ColorOffset*d.Lengths[1][1], 0)),
-		d.CenterCol.Add(pixel.RGB(0, 0, 2*d.ColorOffset*d.Lengths[2][2]))}
+		d.CenterCol.Add(pixel.RGB(3*d.ColorOffset*d.Lengths[0][0], 0, 0)),
+		d.CenterCol.Add(pixel.RGB(0, 3*d.ColorOffset*d.Lengths[1][1], 0)),
+		d.CenterCol.Add(pixel.RGB(0, 0, 3*d.ColorOffset*d.Lengths[2][2])),
+	}
 
 	// Temporarily store basis matrix (janky hack)
 	var temp [3][3]float64
@@ -55,11 +58,12 @@ func (d *MetricDisplay) Draw(window *pixelgl.Window) {
 				d.surface.Color = c
 
 				// Position of the point determined by basis matrix
-				p, depth := d.ProjectParallel(c.Sub(d.CenterCol).Scaled(1 / (2 * d.ColorOffset)))
+				p, depth := d.ProjectParallel(c.Sub(d.CenterCol).Scaled(1 / (3 * d.ColorOffset)))
 				p = p.Scaled(1 / max)
 				depth /= max
 				d.surface.Push(d.Center.Add(p))
 
+				// TODO: set camera distance dynamically
 				d.surface.Circle(500/(200-depth), 0)
 				axialDistance += sampleoffset
 			}
@@ -74,11 +78,10 @@ func (d *MetricDisplay) Draw(window *pixelgl.Window) {
 func (d *MetricDisplay) lengthsToMap() (out [3][3]float64) {
 	var angles [3]float64
 
-	// TODO: rework this
-	// Copied from second_tc.go; terrible practice but I'll fix it later
-	angles[0] = math.Acos((math.Pow(d.Lengths[0][1], 2) - math.Pow(d.Lengths[0][0], 2) - math.Pow(d.Lengths[1][1], 2)) / (-2 * d.Lengths[0][0] * d.Lengths[1][1]))
-	angles[1] = math.Acos((math.Pow(d.Lengths[0][2], 2) - math.Pow(d.Lengths[0][0], 2) - math.Pow(d.Lengths[2][2], 2)) / (-2 * d.Lengths[0][0] * d.Lengths[2][2]))
-	angles[2] = math.Acos((math.Pow(d.Lengths[1][2], 2) - math.Pow(d.Lengths[1][1], 2) - math.Pow(d.Lengths[2][2], 2)) / (-2 * d.Lengths[1][1] * d.Lengths[2][2]))
+	// TODO: this is still just copypasta from second_tc.go
+	for i, j := range [][]int{{0, 1}, {0, 2}, {1, 2}} {
+		angles[i] = math.Acos((math.Pow(d.Lengths[j[0]][j[1]], 2) - math.Pow(d.Lengths[j[0]][j[0]], 2) - math.Pow(d.Lengths[j[1]][j[1]], 2)) / (-2 * d.Lengths[j[0]][j[0]] * d.Lengths[j[1]][j[1]]))
+	}
 
 	for i := range angles {
 		if math.IsNaN(angles[i]) {
@@ -87,25 +90,20 @@ func (d *MetricDisplay) lengthsToMap() (out [3][3]float64) {
 	}
 
 	// Arbitrarily assert that the red direction of the map is in the red direction of space
-	// out[0][0] = d.Lengths[0][0]
 	out[0][0] = 1
 
 	// Arbitrarily assert that the green direction of the map is in the red-green plane
-	// out[1][0] = d.Lengths[1][1] * math.Cos(angles[0])
-	// out[1][1] = d.Lengths[1][1] * math.Sin(angles[0])
 	out[0][1] = math.Cos(angles[0])
 	out[1][1] = math.Sin(angles[0])
 
-	// Calculate some angle related stuff
+	// Calculate phase of blue based on the dot product of green and blue
 	phi := math.Acos((math.Cos(angles[2]) - math.Cos(angles[1])*math.Cos(angles[0])) / (math.Sin(angles[1]) * math.Sin(angles[0])))
+	// If that phase is NaN, the triangle inequality failed
 	if math.IsNaN(phi) {
 		phi = 0 // Safeguard
 	}
 
 	// Constrain the blue direction of the map relative to those, based on the given lengths
-	// out[2][0] = d.Lengths[2][2] * math.Cos(angles[1])
-	// out[2][1] = d.Lengths[2][2] * math.Sin(angles[1]) * math.Cos(phi)
-	// out[2][2] = d.Lengths[2][2] * math.Sin(angles[1]) * math.Sin(phi)
 	out[0][2] = math.Cos(angles[1])
 	out[1][2] = math.Sin(angles[1]) * math.Cos(phi)
 	out[2][2] = math.Sin(angles[1]) * math.Sin(phi)
