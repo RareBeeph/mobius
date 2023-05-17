@@ -45,6 +45,8 @@ func measureMetric(i int, j int, timesLooped int) {
 		lengths[i][j] += math.Abs((S2Slider.Color.R - S2ControlColor.Color.R) / coloroffset /* * math.Sqrt(metric[0][0]) */)
 		lengths[i][j] /= float64(timesLooped + 1)
 
+		copy(MetricGraph.Lengths[:], lengths[:])
+
 		calculateAngles()
 
 		log.Println(lengths[i][j])
@@ -90,9 +92,9 @@ func metricInvalid() bool {
 
 func calculateAngles() {
 	// TODO: rework this
-	angles[0] = math.Acos(math.Pow(lengths[0][1], 2) * math.Pow(lengths[0][0], 2) * math.Pow(lengths[1][1], 2) / (-2 * lengths[0][0] * lengths[1][1]))
-	angles[1] = math.Acos(math.Pow(lengths[0][2], 2) * math.Pow(lengths[0][0], 2) * math.Pow(lengths[2][2], 2) / (-2 * lengths[0][0] * lengths[2][2]))
-	angles[2] = math.Acos(math.Pow(lengths[1][2], 2) * math.Pow(lengths[1][1], 2) * math.Pow(lengths[2][2], 2) / (-2 * lengths[1][1] * lengths[2][2]))
+	angles[0] = math.Acos((math.Pow(lengths[0][1], 2) - math.Pow(lengths[0][0], 2) - math.Pow(lengths[1][1], 2)) / (-2 * lengths[0][0] * lengths[1][1]))
+	angles[1] = math.Acos((math.Pow(lengths[0][2], 2) - math.Pow(lengths[0][0], 2) - math.Pow(lengths[2][2], 2)) / (-2 * lengths[0][0] * lengths[2][2]))
+	angles[2] = math.Acos((math.Pow(lengths[1][2], 2) - math.Pow(lengths[1][1], 2) - math.Pow(lengths[2][2], 2)) / (-2 * lengths[1][1] * lengths[2][2]))
 }
 
 var lengths [3][3]float64

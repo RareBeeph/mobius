@@ -17,7 +17,7 @@ func SwitchToSceneTwo(win *pixelgl.Window, clicked *types.Event) {
 	}
 
 	*Scene1 = *Scene
-	Scene2.Children = []types.E{&SceneReturnButton, &ClickIndicator, &CollisionIndicator, &S2ControlColor, &S2TestColor, &S2Slider, &S2Control2, &ProgressButton, &S2Control3, &MetricLogger, &FpsC}
+	Scene2.Children = []types.E{&SceneReturnButton, &ClickIndicator, &CollisionIndicator, &S2ControlColor, &S2TestColor, &S2Slider, &S2Control2, &ProgressButton, &S2Control3, &MetricLogger, &MetricGraph, &FpsC}
 
 	*Scene = *Scene2
 
@@ -48,6 +48,9 @@ func InitSceneTwo(win *pixelgl.Window, clicked *types.Event) {
 		S2TestColor.Color = S2Slider.Color
 	}
 
+	MetricGraph.CenterCol = S2ControlColor.Color
+	copy(MetricGraph.BasisMatrix[:], types.DefaultBasisMatrix[:])
+
 	measureMetric(1, 1, 0)
 }
 
@@ -64,7 +67,7 @@ var S2TestColor = types.ColoredRect{
 	Color:  S2ControlColor.Color,
 }
 
-var coloroffset = 0.05 // Higher means more proportionally reliable measurements (in theory), but a worse approximation of the tangent space
+var coloroffset = 0.1 // Higher means more proportionally reliable measurements (in theory), but a worse approximation of the tangent space
 
 var S2ControlColor = types.ColoredRect{
 	Bounds: pixel.R(300, 200, 400, 300),
@@ -115,6 +118,14 @@ var MetricLogger = types.Button{
 		log.Print("Angles (degrees): ")
 		log.Println(modifiedAngles)
 	},
+}
+
+var MetricGraph = types.MetricDisplay{
+	CurveDisplay: types.CurveDisplay{
+		Center: pixel.V(150, 500),
+		Bounds: pixel.R(50, 400, 250, 600),
+	},
+	ColorOffset: coloroffset,
 }
 
 var metric [3][3]float64

@@ -25,7 +25,7 @@ type point struct {
 
 const sampleoffset = 0.01
 
-var DefaultBasisMatrix = [3][3]float64{{-70, 0, 70}, {-50, 100, -50}, {50, 50, 50}}
+var DefaultBasisMatrix = [3][3]float64{{-100 * math.Sqrt(0.5), 0, 100 * math.Sqrt(0.5)}, {-100 * math.Sqrt(0.16667), 100 * math.Sqrt(0.6667), -100 * math.Sqrt(0.16667)}, {100 * math.Sqrt(0.3333), 100 * math.Sqrt(0.3333), 100 * math.Sqrt(0.3333)}}
 
 func (d *CurveDisplay) Draw(window *pixelgl.Window) {
 	d.GuardSurface()
