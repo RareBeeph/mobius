@@ -1,6 +1,8 @@
 package entities
 
 import (
+	"colorspacer/db/model"
+	"colorspacer/db/query"
 	"colorspacer/types"
 	"log"
 	"math"
@@ -17,7 +19,7 @@ func SwitchToSceneTwo(win *pixelgl.Window, clicked *types.Event) {
 	}
 
 	*Scene1 = *Scene
-	Scene2.Children = []types.E{&SceneReturnButton, &ClickIndicator, &CollisionIndicator, &S2ControlColor, &S2TestColor, &S2Slider, &S2Control2, &ProgressButton, &S2Control3, &MetricLogger, &MetricGraph, &FpsC}
+	Scene2.Children = []types.E{&SceneReturnButton, &ClickIndicator, &CollisionIndicator, &S2ControlColor, &S2TestColor, &S2Slider, &S2Control2, &ProgressButton, &S2Control3, &MetricLogger, &MetricSaveButton, &MetricGraph, &FpsC}
 
 	*Scene = *Scene2
 
@@ -126,6 +128,20 @@ var MetricGraph = types.MetricDisplay{
 		Bounds: pixel.R(50, 400, 250, 600),
 	},
 	ColorOffset: coloroffset,
+}
+
+var MetricSaveButton = types.Button{
+	ColoredRect: types.ColoredRect{Bounds: pixel.R(600, 200, 900, 400), Color: pixel.RGB(0.8, 0.8, 0.8)},
+	OnEvent: func(e *types.Event) {
+		m := query.Metric
+
+		a := model.NewMetricFromArray(metric)
+		m.Create(&a)
+
+		//Debug
+		b, _ := m.Last()
+		log.Printf("ID: %d, RR: %f, GG: %f, BB: %f, RG: %f, RB: %f, GB: %f", b.ID, b.RedSquared, b.GreenSquared, b.BlueSquared, b.RedDotGreen, b.RedDotBlue, b.GreenDotBlue)
+	},
 }
 
 var metric [3][3]float64

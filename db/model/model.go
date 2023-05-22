@@ -21,5 +21,6 @@ func init() {
 	AllModels = []interface{}{
 		Midpoint{},
 		Color{},
+		Metric{},
 	}
 }
