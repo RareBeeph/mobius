@@ -3,6 +3,7 @@ package entities
 import (
 	"colorspacer/types"
 	"math/rand"
+	"strconv"
 	"time"
 
 	"github.com/faiface/pixel"
@@ -72,6 +73,7 @@ func makeTestRects(controlRects []types.ColoredRect, ctc []pixel.RGBA, testRects
 	for idx, col := range firstChooseTestColors(ctc) {
 		// Make the rects, which when clicked call this function again
 		rect := types.Button{ColoredRect: types.ColoredRect{Bounds: pixel.R(500, 100+float64(idx*100), 600, 200+float64(idx*100)), Color: col}}
+		rect.Label = "Testrect " + strconv.FormatInt(int64(idx), 10)
 		rect.OnEvent = func(e *types.Event) {
 			ChosenTestColors = append(ChosenTestColors, rect.Color)
 

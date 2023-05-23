@@ -19,7 +19,7 @@ func SwitchToSceneTwo(win *pixelgl.Window, clicked *types.Event) {
 	}
 
 	*Scene1 = *Scene
-	Scene2.Children = []types.E{&SceneReturnButton, &ClickIndicator, &CollisionIndicator, &S2ControlColor, &S2TestColor, &S2Slider, &S2Control2, &ProgressButton, &S2Control3, &MetricLogger, &MetricSaveButton, &MetricGraph, &FpsC}
+	Scene2.Children = []types.E{&SceneReturnButton, &ClickIndicator, &CollisionIndicator, &S2ControlColor, &S2TestColor, &S2Slider, &S2Control2, &ProgressButton, &S2Control3, &MetricLogger, &MetricSaveButton, &GraphSlider, &MetricGraph, &FpsC}
 
 	*Scene = *Scene2
 
@@ -32,28 +32,13 @@ func InitSceneTwo(win *pixelgl.Window, clicked *types.Event) {
 	metric[0][0] = 1
 	lengths[0][0] = 1
 
-	sliderRange := S2Slider.ClampMax - S2Slider.ClampMin
-	centerPos := S2Slider.ClampMin + S2Slider.Color.R*sliderRange
-
-	S2Slider.Bounds = pixel.R(centerPos-20, 130, centerPos+20, 170)
-
-	S2Slider.OnEvent = func(e *types.Event) {
-		S2Slider.Bounds.Min.X = e.MousePos.X - 20
-		S2Slider.Bounds.Max.X = e.MousePos.X + 20
-		S2Slider.Clamp()
-
-		colorAmount := (S2Slider.Bounds.Center().X - S2Slider.ClampMin) / sliderRange
-		S2Slider.Color.R = colorAmount
+	S2Slider.UpdateFunc = func(dt time.Duration) {
+		S2Slider.Color = S2TestColor.Color
 	}
 
-	S2TestColor.UpdateFunc = func(dt time.Duration) {
-		S2TestColor.Color = S2Slider.Color
-	}
-
-	MetricGraph.CenterCol = S2ControlColor.Color
 	copy(MetricGraph.BasisMatrix[:], types.DefaultBasisMatrix[:])
 
-	measureMetric(0, 0, 0)
+	measureMetric(0, 0, 0) // Sets S2Control2.Color, S2Control3.Color, and ProgressButton.OnEvent
 }
 
 var sceneTwoInitialized = false
@@ -62,6 +47,7 @@ var Scene2 = &types.Entity{}
 
 var SceneReturnButton = types.Button{
 	ColoredRect: types.ColoredRect{Bounds: pixel.R(800, 450, 950, 550), Color: pixel.RGB(0.6, 0.6, 0.6)},
+	Label:       "Return to scene 1",
 }
 
 var S2TestColor = types.ColoredRect{
@@ -89,12 +75,16 @@ var S2Control3 = types.ColoredRect{
 var S2Slider = types.Slider{
 	Button: types.Button{
 		ColoredRect: types.ColoredRect{
-			Color: S2ControlColor.Color,
+			Color:  S2ControlColor.Color,
+			Bounds: pixel.R(80+S2ControlColor.Color.R*600, 130, 120+S2Control2.Color.R*600, 170),
 		},
 		EventTypeHandled: types.Drag,
 	},
-	ClampMin: 100,
-	ClampMax: 700,
+	ClampMin:    100,
+	ClampMax:    700,
+	TargetValue: &S2TestColor.Color.R,
+	OutputMin:   0,
+	OutputMax:   1,
 }
 
 var ProgressButton = types.Button{
@@ -102,6 +92,7 @@ var ProgressButton = types.Button{
 		Bounds: pixel.R(350, 500, 550, 600),
 		Color:  pixel.RGB(0.8, 0.8, 0.8),
 	},
+	Label: "Next measurement step",
 }
 
 var MetricLogger = types.Button{
@@ -120,6 +111,7 @@ var MetricLogger = types.Button{
 		log.Print("Angles (degrees): ")
 		log.Println(modifiedAngles)
 	},
+	Label: "Print metric to log",
 }
 
 var MetricGraph = types.MetricDisplay{
@@ -127,7 +119,24 @@ var MetricGraph = types.MetricDisplay{
 		Center: pixel.V(150, 500),
 		Bounds: pixel.R(50, 400, 250, 600),
 	},
-	ColorOffset: coloroffset,
+	ColorOffset:     coloroffset,
+	CenterCol:       S2ControlColor.Color,
+	CenterDepth:     375,
+	ThicknessFactor: 2.5,
+}
+
+var GraphSlider = types.Slider{
+	Button: types.Button{
+		ColoredRect: types.ColoredRect{
+			Color:  pixel.RGB(0.5, 0.5, 0.5),
+			Bounds: pixel.R(130, 680, 170, 720),
+		},
+	},
+	ClampMin:    50,
+	ClampMax:    250,
+	TargetValue: &MetricGraph.CenterDepth,
+	OutputMin:   500,
+	OutputMax:   150,
 }
 
 var MetricSaveButton = types.Button{
@@ -142,6 +151,7 @@ var MetricSaveButton = types.Button{
 		b, _ := m.Last()
 		log.Printf("ID: %d, RR: %f, GG: %f, BB: %f, RG: %f, RB: %f, GB: %f", b.ID, b.RedSquared, b.GreenSquared, b.BlueSquared, b.RedDotGreen, b.RedDotBlue, b.GreenDotBlue)
 	},
+	Label: "Save metric to database",
 }
 
 var metric [3][3]float64

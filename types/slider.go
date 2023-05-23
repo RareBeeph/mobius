@@ -8,6 +8,9 @@ import (
 type Slider struct {
 	Button
 
+	TargetValue   *float64
+	OutputMin     float64
+	OutputMax     float64
 	InitialBounds pixel.Rect
 	ClampMin      float64
 	ClampMax      float64
@@ -20,8 +23,26 @@ func (s *Slider) Contained(point pixel.Vec) bool {
 		point.Y < s.InitialBounds.Max.Y)
 }
 
+func (s *Slider) Draw(window *pixelgl.Window) {
+	s.GuardSurface()
+
+	s.surface.Color = pixel.RGB(0.2, 0.2, 0.2)
+	s.surface.Push(pixel.V(s.ClampMin, s.Bounds.Center().Y))
+	s.surface.Push(pixel.V(s.ClampMax, s.Bounds.Center().Y))
+	s.surface.Line(2)
+
+	s.surface.Draw(window)
+
+	s.Button.Draw(window)
+}
+
 func (s *Slider) Handle(event *Event) {
-	s.OnEvent(event)
+	s.Bounds.Min.X = event.MousePos.X - 20
+	s.Bounds.Max.X = event.MousePos.X + 20
+	s.Clamp()
+
+	outputAmount := (s.Bounds.Center().X-s.ClampMin)/(s.ClampMax-s.ClampMin)*(s.OutputMax-s.OutputMin) + s.OutputMin // Assumes linear association
+	*s.TargetValue = outputAmount
 }
 
 func (s *Slider) Handles(event *Event) bool {

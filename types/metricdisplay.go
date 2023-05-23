@@ -10,9 +10,11 @@ import (
 type MetricDisplay struct {
 	CurveDisplay
 
-	CenterCol   pixel.RGBA
-	Lengths     [3][3]float64
-	ColorOffset float64
+	CenterCol       pixel.RGBA
+	Lengths         [3][3]float64
+	ColorOffset     float64
+	ThicknessFactor float64
+	CenterDepth     float64
 }
 
 func (d *MetricDisplay) Draw(window *pixelgl.Window) {
@@ -64,7 +66,8 @@ func (d *MetricDisplay) Draw(window *pixelgl.Window) {
 				d.surface.Push(d.Center.Add(p))
 
 				// TODO: set camera distance dynamically
-				d.surface.Circle(500/(200-depth), 0)
+				// Note: behaves poorly when center depth and point depth are too similar.
+				d.surface.Circle(d.CenterDepth*d.ThicknessFactor/(d.CenterDepth-depth), 0)
 				axialDistance += sampleoffset
 			}
 		}

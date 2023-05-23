@@ -109,8 +109,10 @@ var SaveButton = types.Button{
 			log.Printf("ID: %d, R: %f, G: %f, B: %f", b.Midpoint.ID, b.Midpoint.R, b.Midpoint.G, b.Midpoint.B)
 		}
 	},
+	Label: "Save midpoint to database",
 }
 
 var SceneButton = types.Button{
 	ColoredRect: types.ColoredRect{Bounds: pixel.R(800, 450, 950, 550), Color: pixel.RGB(0.6, 0.6, 0.6)},
+	Label:       "Switch to scene 2",
 }

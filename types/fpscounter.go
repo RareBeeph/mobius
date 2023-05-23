@@ -22,7 +22,6 @@ func (fpsc *FpsCounter) Draw(window *pixelgl.Window) {
 
 	fmt.Fprint(fpsc.Text, "Step ")
 	fmt.Fprintln(fpsc.Text, fpsc.StepCount)
-	fpsc.Text.Draw(window, pixel.IM)
 
 	fpsc.Text.Draw(window, pixel.IM)
 }
