@@ -29,8 +29,7 @@ func InitSceneTwo(win *pixelgl.Window, clicked *types.Event) {
 	lengths[0][0] = 1
 
 	S2Slider.UpdateFunc = func(dt time.Duration) {
-		// FIXME
-		// S2Slider.Color = S2TestColor.Color
+		S2Slider.Color = S2TestColor.Color
 	}
 
 	copy(MetricGraph.BasisMatrix[:], types.DefaultBasisMatrix[:])
@@ -42,18 +41,18 @@ var sceneTwoInitialized = false
 var Scene1 = &types.Entity{}
 var Scene2 = &types.Entity{}
 
-var SceneReturnButton = Scene2.AddChild(&types.Button{
+var SceneReturnButton = &types.Button{
 	ColoredRect: types.ColoredRect{Bounds: pixel.R(800, 450, 950, 550), Color: pixel.RGB(0.6, 0.6, 0.6)},
 	Label:       "Return to scene 1",
 	OnEvent: func(e *types.Event) {
 		*Scene = *Scene1
 	},
-})
+}
 
-var S2TestColor = Scene2.AddChild(&types.ColoredRect{
+var S2TestColor = &types.ColoredRect{
 	Bounds: pixel.R(400, 200, 500, 300),
 	Color:  S2ControlColor.Color,
-})
+}
 
 var coloroffset = 0.05 // Higher means more proportionally reliable measurements (in theory), but a worse approximation of the tangent space
 

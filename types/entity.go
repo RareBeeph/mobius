@@ -121,7 +121,7 @@ func (e *Entity) SetChildren(children Entities) {
 	e.Children = children
 }
 
-func (e *Entity) AddChild(child EI) EI {
+func AppendChild[C EventHandler](e *Entity, child C) C {
 	e.SetChildren(append(e.GetChildren(), child))
 	return child
 }
