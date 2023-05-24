@@ -26,10 +26,16 @@ type EventHandler interface {
 	Handles(*Event) bool
 	GetWaitGroup() *sync.WaitGroup
 	GetChildren() Entities
+	SetChildren(Entities)
 	GuardSurface()
 }
 
 type E = EventHandler
+
+func NewEntityWithParent[GenericEntity E](parent E, inputentity GenericEntity) GenericEntity {
+	parent.SetChildren(append(parent.GetChildren(), inputentity))
+	return inputentity
+}
 
 func (entity *Entity) GuardSurface() {
 	// Generate new surface if we were not provided one
@@ -109,4 +115,8 @@ func (e *Entity) GetWaitGroup() *sync.WaitGroup {
 
 func (e *Entity) GetChildren() Entities {
 	return e.Children
+}
+
+func (e *Entity) SetChildren(children Entities) {
+	e.Children = children
 }

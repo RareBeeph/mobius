@@ -19,13 +19,9 @@ func SwitchToSceneTwo(win *pixelgl.Window, clicked *types.Event) {
 	}
 
 	*Scene1 = *Scene
-	Scene2.Children = []types.E{&SceneReturnButton, &ClickIndicator, &CollisionIndicator, &S2ControlColor, &S2TestColor, &S2Slider, &S2Control2, &ProgressButton, &S2Control3, &MetricLogger, &MetricSaveButton, &GraphSlider, &MetricGraph, &FpsC}
+	Scene2.Children = append(Scene2.Children, []types.E{&ClickIndicator, &CollisionIndicator, &S2ControlColor, &S2Slider, &S2Control2, &ProgressButton, &S2Control3, &MetricLogger, &MetricSaveButton, &GraphSlider, &MetricGraph, &FpsC}...)
 
 	*Scene = *Scene2
-
-	SceneReturnButton.OnEvent = func(e *types.Event) {
-		*Scene = *Scene1
-	}
 }
 
 func InitSceneTwo(win *pixelgl.Window, clicked *types.Event) {
@@ -45,15 +41,18 @@ var sceneTwoInitialized = false
 var Scene1 = &types.Entity{}
 var Scene2 = &types.Entity{}
 
-var SceneReturnButton = types.Button{
+var SceneReturnButton = types.NewEntityWithParent(Scene2, &types.Button{
 	ColoredRect: types.ColoredRect{Bounds: pixel.R(800, 450, 950, 550), Color: pixel.RGB(0.6, 0.6, 0.6)},
 	Label:       "Return to scene 1",
-}
+	OnEvent: func(e *types.Event) {
+		*Scene = *Scene1
+	},
+})
 
-var S2TestColor = types.ColoredRect{
+var S2TestColor = types.NewEntityWithParent(Scene2, &types.ColoredRect{
 	Bounds: pixel.R(400, 200, 500, 300),
 	Color:  S2ControlColor.Color,
-}
+})
 
 var coloroffset = 0.05 // Higher means more proportionally reliable measurements (in theory), but a worse approximation of the tangent space
 
