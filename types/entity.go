@@ -9,7 +9,7 @@ import (
 	"github.com/faiface/pixel/pixelgl"
 )
 
-type Entities []E
+type Entities []EI
 
 type Entity struct {
 	surface *imdraw.IMDraw
@@ -30,9 +30,9 @@ type EventHandler interface {
 	GuardSurface()
 }
 
-type E = EventHandler
+type EI = EventHandler
 
-func NewEntityWithParent[GenericEntity E](parent E, inputentity GenericEntity) GenericEntity {
+func NewEntityWithParent[GenericEntity EI](parent EI, inputentity GenericEntity) GenericEntity {
 	parent.SetChildren(append(parent.GetChildren(), inputentity))
 	return inputentity
 }
@@ -52,7 +52,7 @@ func (entity *Entity) Update(deltatime time.Duration) {
 	}
 }
 
-func Update(e E, deltatime time.Duration) {
+func Update(e EI, deltatime time.Duration) {
 	e.Update(deltatime)
 	for _, c := range e.GetChildren() {
 		Update(c, deltatime)
@@ -64,7 +64,7 @@ func (entity *Entity) Draw(window *pixelgl.Window) {
 	entity.surface.Draw(window)
 }
 
-func Draw(e E, window *pixelgl.Window) {
+func Draw(e EI, window *pixelgl.Window) {
 	e.GuardSurface()
 	e.Draw(window)
 	for _, c := range e.GetChildren() {
@@ -80,7 +80,7 @@ func (entity *Entity) Handles(event *Event) bool {
 	return false
 }
 
-func Receive(e E, event *Event) {
+func Receive(e EI, event *Event) {
 	// TODO: This probably needs to be unwound so we can use the defer keyword to release
 	if e.Handles(event) {
 		event.Lock()
@@ -99,7 +99,7 @@ func Receive(e E, event *Event) {
 
 	for _, c := range children {
 		wg.Add(1)
-		go func(child E) {
+		go func(child EI) {
 			defer wg.Done()
 			Receive(child, event)
 		}(c)
@@ -119,4 +119,9 @@ func (e *Entity) GetChildren() Entities {
 
 func (e *Entity) SetChildren(children Entities) {
 	e.Children = children
+}
+
+func (e *Entity) AddChild(child EI) EI {
+	e.SetChildren(append(e.GetChildren(), child))
+	return child
 }

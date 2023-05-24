@@ -19,7 +19,7 @@ func SwitchToSceneTwo(win *pixelgl.Window, clicked *types.Event) {
 	}
 
 	*Scene1 = *Scene
-	Scene2.Children = append(Scene2.Children, []types.E{&ClickIndicator, &CollisionIndicator, &S2ControlColor, &S2Slider, &S2Control2, &ProgressButton, &S2Control3, &MetricLogger, &MetricSaveButton, &GraphSlider, &MetricGraph, &FpsC}...)
+	Scene2.Children = append(Scene2.Children, []types.EI{&ClickIndicator, &CollisionIndicator, &S2ControlColor, &S2Slider, &S2Control2, &ProgressButton, &S2Control3, &MetricLogger, &MetricSaveButton, &GraphSlider, &MetricGraph, &FpsC}...)
 
 	*Scene = *Scene2
 }
@@ -29,7 +29,8 @@ func InitSceneTwo(win *pixelgl.Window, clicked *types.Event) {
 	lengths[0][0] = 1
 
 	S2Slider.UpdateFunc = func(dt time.Duration) {
-		S2Slider.Color = S2TestColor.Color
+		// FIXME
+		// S2Slider.Color = S2TestColor.Color
 	}
 
 	copy(MetricGraph.BasisMatrix[:], types.DefaultBasisMatrix[:])
@@ -41,7 +42,7 @@ var sceneTwoInitialized = false
 var Scene1 = &types.Entity{}
 var Scene2 = &types.Entity{}
 
-var SceneReturnButton = types.NewEntityWithParent(Scene2, &types.Button{
+var SceneReturnButton = Scene2.AddChild(&types.Button{
 	ColoredRect: types.ColoredRect{Bounds: pixel.R(800, 450, 950, 550), Color: pixel.RGB(0.6, 0.6, 0.6)},
 	Label:       "Return to scene 1",
 	OnEvent: func(e *types.Event) {
@@ -49,7 +50,7 @@ var SceneReturnButton = types.NewEntityWithParent(Scene2, &types.Button{
 	},
 })
 
-var S2TestColor = types.NewEntityWithParent(Scene2, &types.ColoredRect{
+var S2TestColor = Scene2.AddChild(&types.ColoredRect{
 	Bounds: pixel.R(400, 200, 500, 300),
 	Color:  S2ControlColor.Color,
 })

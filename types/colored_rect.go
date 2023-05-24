@@ -13,7 +13,7 @@ type ColoredRect struct {
 }
 
 type ColoredRectHandler interface {
-	E
+	EI
 
 	Contains(pixel.Vec) bool
 	GetColor() pixel.RGBA
