@@ -9,14 +9,14 @@ import (
 	"github.com/faiface/pixel/pixelgl"
 )
 
-type Entities []EI
+type EventHandlers []EI
 
 type Entity struct {
 	surface *imdraw.IMDraw
 	wg      *sync.WaitGroup
 
 	UpdateFunc func(time.Duration)
-	Children   Entities
+	Children   EventHandlers
 }
 
 type EventHandler interface {
@@ -25,8 +25,8 @@ type EventHandler interface {
 	Handle(*Event)
 	Handles(*Event) bool
 	GetWaitGroup() *sync.WaitGroup
-	GetChildren() Entities
-	SetChildren(Entities)
+	GetChildren() EventHandlers
+	SetChildren(EventHandlers)
 	GuardSurface()
 }
 
@@ -113,11 +113,11 @@ func (e *Entity) GetWaitGroup() *sync.WaitGroup {
 	return e.wg
 }
 
-func (e *Entity) GetChildren() Entities {
+func (e *Entity) GetChildren() EventHandlers {
 	return e.Children
 }
 
-func (e *Entity) SetChildren(children Entities) {
+func (e *Entity) SetChildren(children EventHandlers) {
 	e.Children = children
 }
 
