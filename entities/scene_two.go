@@ -10,8 +10,6 @@ import (
 
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/pixelgl"
-	"github.com/faiface/pixel/text"
-	"golang.org/x/image/font/basicfont"
 )
 
 func SwitchToSceneTwo(win *pixelgl.Window, clicked *types.Event) {
@@ -37,6 +35,8 @@ func InitSceneTwo(win *pixelgl.Window, clicked *types.Event) {
 		return ok
 	})
 	// Mostly copied from ui.go
+	// TODO: make indicators their own type
+	// Occasionally drops inputs for unknown reason
 	s2col := S2CollisionIndicator.(*types.Button)
 	s2col.OnEvent = func(e *types.Event) {
 		for i, e := range allButtons {
@@ -53,6 +53,7 @@ func InitSceneTwo(win *pixelgl.Window, clicked *types.Event) {
 		s2col.Color.A = 0
 	}
 
+	// Mostly copied from ui.go
 	s2clk := S2ClickIndicator.(*types.Button)
 	s2clk.Bounds = win.Bounds()
 	s2clk.UpdateFunc = func(time.Duration) {
@@ -64,20 +65,6 @@ func InitSceneTwo(win *pixelgl.Window, clicked *types.Event) {
 		s2clk.Color.G = 1
 		s2clk.Color.A = 1
 		s2clk.Bounds = pixel.R(0, 10, 10, 20)
-	}
-
-	s2fps := S2FpsCounter.(*types.FpsCounter)
-	basicAtlas := text.NewAtlas(basicfont.Face7x13, text.ASCII)
-	s2fps.Text = text.New(pixel.V(100, 100), basicAtlas)
-	s2fps.FrameTimes = []time.Time{time.Now()}
-
-	s2fps.UpdateFunc = func(dt time.Duration) {
-		s2fps.Text.Clear()
-
-		s2fps.FrameTimes = append(s2fps.FrameTimes, s2fps.FrameTimes[len(s2fps.FrameTimes)-1].Add(dt)) // Not strictly synced to the time kept track of in main
-		for s2fps.FrameTimes[len(s2fps.FrameTimes)-1].Sub(s2fps.FrameTimes[0]).Seconds() >= 1 {
-			s2fps.FrameTimes = s2fps.FrameTimes[1:]
-		}
 	}
 
 	copy(MetricGraph.(*types.MetricDisplay).BasisMatrix[:], types.DefaultBasisMatrix[:])
@@ -207,6 +194,6 @@ var S2CollisionIndicator = Scene2.AddChild(&types.Button{ColoredRect: types.Colo
 
 var S2ClickIndicator = Scene2.AddChild(&types.Button{ColoredRect: types.ColoredRect{Color: pixel.RGB(0, 0, 0)}})
 
-var S2FpsCounter = Scene2.AddChild(&types.FpsCounter{})
+var S2FpsCounter = Scene2.AddChild(&types.FpsCounter{Position: pixel.V(100, 100)})
 
 var metric [3][3]float64

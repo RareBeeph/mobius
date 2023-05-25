@@ -76,6 +76,7 @@ func makeTestRects(controlRects []types.ColoredRect, ctc []pixel.RGBA, testRects
 		rect.Label = "Testrect " + strconv.FormatInt(int64(idx), 10)
 		rect.OnEvent = func(e *types.Event) {
 			ChosenTestColors = append(ChosenTestColors, rect.Color)
+			FpsC.StepCount = len(ChosenTestColors) % 7
 
 			a := makeTestRects(controlRects, ChosenTestColors, testRects)
 			for len(*testRects) < 2 {
