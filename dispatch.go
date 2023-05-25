@@ -8,7 +8,7 @@ import (
 )
 
 type Dispatch struct {
-	Entities types.Entities
+	Entities types.EventHandlers
 }
 
 func (dispatch *Dispatch) Update(deltatime time.Duration) {

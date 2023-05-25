@@ -9,14 +9,14 @@ import (
 	"github.com/faiface/pixel/pixelgl"
 )
 
-type Entities []EI
+type EventHandlers []EI
 
 type Entity struct {
 	surface *imdraw.IMDraw
 	wg      *sync.WaitGroup
 
 	UpdateFunc func(time.Duration)
-	Children   Entities
+	Children   EventHandlers
 }
 
 type EventHandler interface {
@@ -25,17 +25,12 @@ type EventHandler interface {
 	Handle(*Event)
 	Handles(*Event) bool
 	GetWaitGroup() *sync.WaitGroup
-	GetChildren() Entities
-	SetChildren(Entities)
+	GetChildren() EventHandlers
+	SetChildren(EventHandlers)
 	GuardSurface()
 }
 
 type EI = EventHandler
-
-func NewEntityWithParent[GenericEntity EI](parent EI, inputentity GenericEntity) GenericEntity {
-	parent.SetChildren(append(parent.GetChildren(), inputentity))
-	return inputentity
-}
 
 func (entity *Entity) GuardSurface() {
 	// Generate new surface if we were not provided one
@@ -113,15 +108,24 @@ func (e *Entity) GetWaitGroup() *sync.WaitGroup {
 	return e.wg
 }
 
-func (e *Entity) GetChildren() Entities {
+func (e *Entity) GetChildren() EventHandlers {
 	return e.Children
 }
 
-func (e *Entity) SetChildren(children Entities) {
+func (e *Entity) SetChildren(children EventHandlers) {
 	e.Children = children
 }
 
 func (e *Entity) AddChild(child EI) EI {
 	e.SetChildren(append(e.GetChildren(), child))
 	return child
+}
+
+func (e *Entity) FindAllChildren(condition func(EI) bool) (out []EI) {
+	for _, c := range e.Children {
+		if condition(c) {
+			out = append(out, c)
+		}
+	}
+	return out
 }

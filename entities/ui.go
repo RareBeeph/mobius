@@ -30,7 +30,7 @@ func Initialize(win *pixelgl.Window, clicked *types.Event) {
 
 	(*Scene).Children = []types.EI{&SaveButton, &ClickIndicator, &CollisionIndicator, &ControlRects[0], &ControlRects[1], TestRects[0], TestRects[1], &SceneButton, &FpsC, Graph}
 
-	allButtons := []types.CR{&SaveButton, &ClickIndicator, &CollisionIndicator, &ControlRects[0], &ControlRects[1], TestRects[0], TestRects[1], &SceneButton}
+	allButtons := []types.CRI{&SaveButton, &ClickIndicator, &CollisionIndicator, &ControlRects[0], &ControlRects[1], TestRects[0], TestRects[1], &SceneButton}
 	CollisionIndicator.OnEvent = func(e *types.Event) {
 		for i, e := range allButtons {
 			if e.Contains(clicked.MousePos) {

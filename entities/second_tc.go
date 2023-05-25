@@ -39,32 +39,36 @@ func measureMetric(i int, j int, timesLooped int) {
 		toAdd[j] = -coloroffset
 	}
 
-	tempCC3 := S2Control3.Color
+	tempCC3 := S2Control3.(*types.ColoredRect).Color
 	if i == 0 && j == 0 {
 		// Special case: when testing red's length, compare against a constant pair of grays
 		// This should make metrics for different locations in color space directly comparable
-		S2Control3.Color = pixel.RGB(0.5, 0.5, 0.5)
+		S2Control3.(*types.ColoredRect).Color = pixel.RGB(0.5, 0.5, 0.5)
 		toAdd[1] = coloroffset
 		toAdd[2] = coloroffset
+
+		S2FpsCounter.(*types.FpsCounter).StepCount = 0
 	}
 
-	S2Control2.Color = S2Control3.Color.Add(pixel.RGB(toAdd[0], toAdd[1], toAdd[2]))
+	S2Control2.(*types.ColoredRect).Color = S2Control3.(*types.ColoredRect).Color.Add(pixel.RGB(toAdd[0], toAdd[1], toAdd[2]))
 
-	ProgressButton.OnEvent = func(e *types.Event) {
+	ProgressButton.(*types.Button).OnEvent = func(e *types.Event) {
+		S2FpsCounter.(*types.FpsCounter).StepCount++
+
 		lengths[i][j] *= float64(timesLooped)
 		if i == 0 && j == 0 {
 			// length of red in terms of gray (Gy/R), as reciprocal of length of gray in terms of red (R/Gy)
-			lengths[i][j] += math.Abs(coloroffset / (S2Slider.Color.R - S2ControlColor.Color.R))
+			lengths[i][j] += math.Abs(coloroffset / (S2Slider.(*types.Slider).Color.R - S2ControlColor.(*types.ColoredRect).Color.R))
 
 			// revert control color. probably doable just by setting to the first control color
-			S2Control3.Color = tempCC3
+			S2Control3.(*types.ColoredRect).Color = tempCC3
 		} else {
 			// length of X in terms of gray (Gy/X), as length of X in terms of red times length of red in terms of gray ((R/X)*(Gy/R))
-			lengths[i][j] += math.Abs((S2Slider.Color.R - S2ControlColor.Color.R) * lengths[0][0] / coloroffset)
+			lengths[i][j] += math.Abs((S2Slider.(*types.Slider).Color.R - S2ControlColor.(*types.ColoredRect).Color.R) * lengths[0][0] / coloroffset)
 		}
 		lengths[i][j] /= float64(timesLooped + 1)
 
-		copy(MetricGraph.Lengths[:], lengths[:])
+		copy(MetricGraph.(*types.MetricDisplay).Lengths[:], lengths[:])
 
 		angles = calculateAngles()
 

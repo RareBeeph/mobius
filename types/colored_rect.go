@@ -19,7 +19,7 @@ type ColoredRectHandler interface {
 	GetColor() pixel.RGBA
 }
 
-type CR = ColoredRectHandler
+type CRI = ColoredRectHandler
 
 func (r *ColoredRect) Contains(point pixel.Vec) bool {
 	return (point.X >= r.Bounds.Min.X &&

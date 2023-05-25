@@ -10,6 +10,8 @@ import (
 
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/pixelgl"
+	"github.com/faiface/pixel/text"
+	"golang.org/x/image/font/basicfont"
 )
 
 func SwitchToSceneTwo(win *pixelgl.Window, clicked *types.Event) {
@@ -19,8 +21,6 @@ func SwitchToSceneTwo(win *pixelgl.Window, clicked *types.Event) {
 	}
 
 	*Scene1 = *Scene
-	Scene2.Children = append(Scene2.Children, []types.EI{&ClickIndicator, &CollisionIndicator, &S2ControlColor, &S2Slider, &S2Control2, &ProgressButton, &S2Control3, &MetricLogger, &MetricSaveButton, &GraphSlider, &MetricGraph, &FpsC}...)
-
 	*Scene = *Scene2
 }
 
@@ -28,11 +28,59 @@ func InitSceneTwo(win *pixelgl.Window, clicked *types.Event) {
 	metric[0][0] = 1
 	lengths[0][0] = 1
 
-	S2Slider.UpdateFunc = func(dt time.Duration) {
-		S2Slider.Color = S2TestColor.(*types.ColoredRect).Color
+	S2Slider.(*types.Slider).UpdateFunc = func(dt time.Duration) {
+		S2Slider.(*types.Slider).Color = S2TestColor.(*types.ColoredRect).Color
 	}
 
-	copy(MetricGraph.BasisMatrix[:], types.DefaultBasisMatrix[:])
+	allButtons := Scene2.FindAllChildren(func(ei types.EI) bool {
+		_, ok := ei.(types.CRI)
+		return ok
+	})
+	// Mostly copied from ui.go
+	s2col := S2CollisionIndicator.(*types.Button)
+	s2col.OnEvent = func(e *types.Event) {
+		for i, e := range allButtons {
+			if e.(types.CRI).Contains(clicked.MousePos) {
+				s2col.Bounds = pixel.R(float64(10*i), 0, float64(10*i+10), 10)
+				s2col.Color = e.(types.CRI).GetColor()
+				s2col.Color.A = 1
+			}
+		}
+	}
+	s2col.UpdateFunc = func(time.Duration) {
+		s2col.Bounds = win.Bounds()
+		s2col.Color = pixel.RGB(0, 0, 0)
+		s2col.Color.A = 0
+	}
+
+	s2clk := S2ClickIndicator.(*types.Button)
+	s2clk.Bounds = win.Bounds()
+	s2clk.UpdateFunc = func(time.Duration) {
+		s2clk.Color.G = 0
+		s2clk.Color.A = 0
+		s2clk.Bounds = win.Bounds()
+	}
+	s2clk.OnEvent = func(e *types.Event) {
+		s2clk.Color.G = 1
+		s2clk.Color.A = 1
+		s2clk.Bounds = pixel.R(0, 10, 10, 20)
+	}
+
+	s2fps := S2FpsCounter.(*types.FpsCounter)
+	basicAtlas := text.NewAtlas(basicfont.Face7x13, text.ASCII)
+	s2fps.Text = text.New(pixel.V(100, 100), basicAtlas)
+	s2fps.FrameTimes = []time.Time{time.Now()}
+
+	s2fps.UpdateFunc = func(dt time.Duration) {
+		s2fps.Text.Clear()
+
+		s2fps.FrameTimes = append(s2fps.FrameTimes, s2fps.FrameTimes[len(s2fps.FrameTimes)-1].Add(dt)) // Not strictly synced to the time kept track of in main
+		for s2fps.FrameTimes[len(s2fps.FrameTimes)-1].Sub(s2fps.FrameTimes[0]).Seconds() >= 1 {
+			s2fps.FrameTimes = s2fps.FrameTimes[1:]
+		}
+	}
+
+	copy(MetricGraph.(*types.MetricDisplay).BasisMatrix[:], types.DefaultBasisMatrix[:])
 
 	measureMetric(0, 0, 0) // Sets S2Control2.Color, S2Control3.Color, and ProgressButton.OnEvent
 }
@@ -40,6 +88,8 @@ func InitSceneTwo(win *pixelgl.Window, clicked *types.Event) {
 var sceneTwoInitialized = false
 var Scene1 = &types.Entity{}
 var Scene2 = &types.Entity{}
+
+var ControlColor = chooseControlColor().Scaled(0.8).Add(pixel.RGB(0.1, 0.1, 0.1))
 
 var SceneReturnButton = Scene2.AddChild(&types.Button{
 	ColoredRect: types.ColoredRect{Bounds: pixel.R(800, 450, 950, 550), Color: pixel.RGB(0.6, 0.6, 0.6)},
@@ -51,50 +101,50 @@ var SceneReturnButton = Scene2.AddChild(&types.Button{
 
 var S2TestColor = Scene2.AddChild(&types.ColoredRect{
 	Bounds: pixel.R(400, 200, 500, 300),
-	Color:  S2ControlColor.Color,
+	Color:  ControlColor,
 })
 
 var coloroffset = 0.05 // Higher means more proportionally reliable measurements (in theory), but a worse approximation of the tangent space
 
-var S2ControlColor = types.ColoredRect{
+var S2ControlColor = Scene2.AddChild(&types.ColoredRect{
 	Bounds: pixel.R(300, 200, 400, 300),
-	Color:  chooseControlColor().Scaled(0.8).Add(pixel.RGB(0.1, 0.1, 0.1)),
-}
+	Color:  ControlColor,
+})
 
-var S2Control2 = types.ColoredRect{
+var S2Control2 = Scene2.AddChild(&types.ColoredRect{
 	Bounds: pixel.R(400, 300, 500, 400),
-	Color:  S2Control3.Color.Add(pixel.RGB(0, coloroffset, 0)), // Note: unclamped, and should actually be a constant
-}
+	Color:  ControlColor.Add(pixel.RGB(0, coloroffset, 0)), // Note: unclamped, and should actually be a constant
+})
 
-var S2Control3 = types.ColoredRect{
+var S2Control3 = Scene2.AddChild(&types.ColoredRect{
 	Bounds: pixel.R(300, 300, 400, 400),
-	Color:  S2ControlColor.Color, // Should actually be a constant
-}
+	Color:  ControlColor, // Should actually be a constant
+})
 
-var S2Slider = types.Slider{
+var S2Slider = Scene2.AddChild(&types.Slider{
 	Button: types.Button{
 		ColoredRect: types.ColoredRect{
-			Color:  S2ControlColor.Color,
-			Bounds: pixel.R(80+S2ControlColor.Color.R*600, 130, 120+S2Control2.Color.R*600, 170),
+			Color:  ControlColor,
+			Bounds: pixel.R(80+ControlColor.R*600, 130, 120+ControlColor.R*600, 170),
 		},
 		EventTypeHandled: types.Drag,
 	},
 	ClampMin:    100,
 	ClampMax:    700,
-	TargetValue: &S2TestColor.Color.R,
+	TargetValue: &S2TestColor.(*types.ColoredRect).Color.R,
 	OutputMin:   0,
 	OutputMax:   1,
-}
+})
 
-var ProgressButton = types.Button{
+var ProgressButton = Scene2.AddChild(&types.Button{
 	ColoredRect: types.ColoredRect{
 		Bounds: pixel.R(350, 500, 550, 600),
 		Color:  pixel.RGB(0.8, 0.8, 0.8),
 	},
 	Label: "Next measurement step",
-}
+})
 
-var MetricLogger = types.Button{
+var MetricLogger = Scene2.AddChild(&types.Button{
 	ColoredRect: types.ColoredRect{
 		Bounds: pixel.R(600, 500, 760, 600),
 		Color:  pixel.RGB(0.8, 0.8, 0.8),
@@ -111,20 +161,20 @@ var MetricLogger = types.Button{
 		log.Println(modifiedAngles)
 	},
 	Label: "Print metric to log",
-}
+})
 
-var MetricGraph = types.MetricDisplay{
+var MetricGraph = Scene2.AddChild(&types.MetricDisplay{
 	CurveDisplay: types.CurveDisplay{
 		Center: pixel.V(150, 500),
 		Bounds: pixel.R(50, 400, 250, 600),
 	},
 	ColorOffset:     coloroffset,
-	CenterCol:       S2ControlColor.Color,
+	CenterCol:       ControlColor,
 	CenterDepth:     375,
 	ThicknessFactor: 2.5,
-}
+})
 
-var GraphSlider = types.Slider{
+var GraphSlider = Scene2.AddChild(&types.Slider{
 	Button: types.Button{
 		ColoredRect: types.ColoredRect{
 			Color:  pixel.RGB(0.5, 0.5, 0.5),
@@ -133,12 +183,12 @@ var GraphSlider = types.Slider{
 	},
 	ClampMin:    50,
 	ClampMax:    250,
-	TargetValue: &MetricGraph.CenterDepth,
+	TargetValue: &MetricGraph.(*types.MetricDisplay).CenterDepth,
 	OutputMin:   500,
 	OutputMax:   150,
-}
+})
 
-var MetricSaveButton = types.Button{
+var MetricSaveButton = Scene2.AddChild(&types.Button{
 	ColoredRect: types.ColoredRect{Bounds: pixel.R(600, 200, 900, 400), Color: pixel.RGB(0.8, 0.8, 0.8)},
 	OnEvent: func(e *types.Event) {
 		m := query.Metric
@@ -151,6 +201,12 @@ var MetricSaveButton = types.Button{
 		log.Printf("ID: %d, RR: %f, GG: %f, BB: %f, RG: %f, RB: %f, GB: %f", b.ID, b.RedSquared, b.GreenSquared, b.BlueSquared, b.RedDotGreen, b.RedDotBlue, b.GreenDotBlue)
 	},
 	Label: "Save metric to database",
-}
+})
+
+var S2CollisionIndicator = Scene2.AddChild(&types.Button{ColoredRect: types.ColoredRect{Bounds: pixel.R(0, 0, 10, 10), Color: pixel.RGB(0, 1, 0)}})
+
+var S2ClickIndicator = Scene2.AddChild(&types.Button{ColoredRect: types.ColoredRect{Color: pixel.RGB(0, 0, 0)}})
+
+var S2FpsCounter = Scene2.AddChild(&types.FpsCounter{})
 
 var metric [3][3]float64
