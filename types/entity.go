@@ -32,11 +32,6 @@ type EventHandler interface {
 
 type EI = EventHandler
 
-func NewEntityWithParent[GenericEntity EI](parent EI, inputentity GenericEntity) GenericEntity {
-	parent.SetChildren(append(parent.GetChildren(), inputentity))
-	return inputentity
-}
-
 func (entity *Entity) GuardSurface() {
 	// Generate new surface if we were not provided one
 	if entity.surface == nil {
@@ -121,7 +116,7 @@ func (e *Entity) SetChildren(children EventHandlers) {
 	e.Children = children
 }
 
-func AppendChild[C EventHandler](e *Entity, child C) C {
+func AppendChild[C EI](e EI, child C) C {
 	e.SetChildren(append(e.GetChildren(), child))
 	return child
 }

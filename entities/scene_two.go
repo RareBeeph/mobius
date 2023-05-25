@@ -19,7 +19,9 @@ func SwitchToSceneTwo(win *pixelgl.Window, clicked *types.Event) {
 	}
 
 	*Scene1 = *Scene
-	Scene2.Children = append(Scene2.Children, []types.EI{&ClickIndicator, &CollisionIndicator, &S2ControlColor, &S2Slider, &S2Control2, &ProgressButton, &S2Control3, &MetricLogger, &MetricSaveButton, &GraphSlider, &MetricGraph, &FpsC}...)
+
+	// Interesting situation where the click indicator, collision indicator, and fps counter are children of multiple scenes simultaneously
+	Scene2.Children = append(Scene2.Children, []types.EI{&ClickIndicator, &CollisionIndicator, &FpsC}...)
 
 	*Scene = *Scene2
 }
@@ -41,37 +43,37 @@ var sceneTwoInitialized = false
 var Scene1 = &types.Entity{}
 var Scene2 = &types.Entity{}
 
-var SceneReturnButton = &types.Button{
+var SceneReturnButton = types.AppendChild(Scene2, &types.Button{
 	ColoredRect: types.ColoredRect{Bounds: pixel.R(800, 450, 950, 550), Color: pixel.RGB(0.6, 0.6, 0.6)},
 	Label:       "Return to scene 1",
 	OnEvent: func(e *types.Event) {
 		*Scene = *Scene1
 	},
-}
+})
 
-var S2TestColor = &types.ColoredRect{
+var S2TestColor = types.AppendChild(Scene2, &types.ColoredRect{
 	Bounds: pixel.R(400, 200, 500, 300),
 	Color:  S2ControlColor.Color,
-}
+})
 
 var coloroffset = 0.05 // Higher means more proportionally reliable measurements (in theory), but a worse approximation of the tangent space
 
-var S2ControlColor = types.ColoredRect{
+var S2ControlColor = types.AppendChild(Scene2, &types.ColoredRect{
 	Bounds: pixel.R(300, 200, 400, 300),
 	Color:  chooseControlColor().Scaled(0.8).Add(pixel.RGB(0.1, 0.1, 0.1)),
-}
+})
 
-var S2Control2 = types.ColoredRect{
+var S2Control2 = types.AppendChild(Scene2, &types.ColoredRect{
 	Bounds: pixel.R(400, 300, 500, 400),
 	Color:  S2Control3.Color.Add(pixel.RGB(0, coloroffset, 0)), // Note: unclamped, and should actually be a constant
-}
+})
 
-var S2Control3 = types.ColoredRect{
+var S2Control3 = types.AppendChild(Scene2, &types.ColoredRect{
 	Bounds: pixel.R(300, 300, 400, 400),
 	Color:  S2ControlColor.Color, // Should actually be a constant
-}
+})
 
-var S2Slider = types.Slider{
+var S2Slider = types.AppendChild(Scene2, &types.Slider{
 	Button: types.Button{
 		ColoredRect: types.ColoredRect{
 			Color:  S2ControlColor.Color,
@@ -84,17 +86,17 @@ var S2Slider = types.Slider{
 	TargetValue: &S2TestColor.Color.R,
 	OutputMin:   0,
 	OutputMax:   1,
-}
+})
 
-var ProgressButton = types.Button{
+var ProgressButton = types.AppendChild(Scene2, &types.Button{
 	ColoredRect: types.ColoredRect{
 		Bounds: pixel.R(350, 500, 550, 600),
 		Color:  pixel.RGB(0.8, 0.8, 0.8),
 	},
 	Label: "Next measurement step",
-}
+})
 
-var MetricLogger = types.Button{
+var MetricLogger = types.AppendChild(Scene2, &types.Button{
 	ColoredRect: types.ColoredRect{
 		Bounds: pixel.R(600, 500, 760, 600),
 		Color:  pixel.RGB(0.8, 0.8, 0.8),
@@ -111,9 +113,9 @@ var MetricLogger = types.Button{
 		log.Println(modifiedAngles)
 	},
 	Label: "Print metric to log",
-}
+})
 
-var MetricGraph = types.MetricDisplay{
+var MetricGraph = types.AppendChild(Scene2, &types.MetricDisplay{
 	CurveDisplay: types.CurveDisplay{
 		Center: pixel.V(150, 500),
 		Bounds: pixel.R(50, 400, 250, 600),
@@ -122,9 +124,9 @@ var MetricGraph = types.MetricDisplay{
 	CenterCol:       S2ControlColor.Color,
 	CenterDepth:     375,
 	ThicknessFactor: 2.5,
-}
+})
 
-var GraphSlider = types.Slider{
+var GraphSlider = types.AppendChild(Scene2, &types.Slider{
 	Button: types.Button{
 		ColoredRect: types.ColoredRect{
 			Color:  pixel.RGB(0.5, 0.5, 0.5),
@@ -136,9 +138,9 @@ var GraphSlider = types.Slider{
 	TargetValue: &MetricGraph.CenterDepth,
 	OutputMin:   500,
 	OutputMax:   150,
-}
+})
 
-var MetricSaveButton = types.Button{
+var MetricSaveButton = types.AppendChild(Scene2, &types.Button{
 	ColoredRect: types.ColoredRect{Bounds: pixel.R(600, 200, 900, 400), Color: pixel.RGB(0.8, 0.8, 0.8)},
 	OnEvent: func(e *types.Event) {
 		m := query.Metric
@@ -151,6 +153,6 @@ var MetricSaveButton = types.Button{
 		log.Printf("ID: %d, RR: %f, GG: %f, BB: %f, RG: %f, RB: %f, GB: %f", b.ID, b.RedSquared, b.GreenSquared, b.BlueSquared, b.RedDotGreen, b.RedDotBlue, b.GreenDotBlue)
 	},
 	Label: "Save metric to database",
-}
+})
 
 var metric [3][3]float64
