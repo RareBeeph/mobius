@@ -13,17 +13,20 @@ import (
 type FpsCounter struct {
 	Entity
 
-	Position   pixel.Vec
 	StepCount  int
 	FrameTimes []time.Time
 	Text       *text.Text
 }
 
-func (fpsc *FpsCounter) Update(dt time.Duration) {
-	if fpsc.FrameTimes == nil {
-		fpsc.FrameTimes = []time.Time{time.Now()}
-	}
+func NewFpsCounter(pos pixel.Vec) (fpsc *FpsCounter) {
+	fpsc = &FpsCounter{}
+	fpsc.FrameTimes = []time.Time{time.Now()}
+	fpsc.Text = text.New(pos, text.NewAtlas(basicfont.Face7x13, text.ASCII))
 
+	return fpsc
+}
+
+func (fpsc *FpsCounter) Update(dt time.Duration) {
 	fpsc.FrameTimes = append(fpsc.FrameTimes, fpsc.FrameTimes[len(fpsc.FrameTimes)-1].Add(dt)) // Not strictly synced to the time kept track of in main
 	for fpsc.FrameTimes[len(fpsc.FrameTimes)-1].Sub(fpsc.FrameTimes[0]).Seconds() >= 1 {
 		fpsc.FrameTimes = fpsc.FrameTimes[1:]
@@ -35,10 +38,6 @@ func (fpsc *FpsCounter) Update(dt time.Duration) {
 }
 
 func (fpsc *FpsCounter) Draw(window *pixelgl.Window) {
-	if fpsc.Text == nil {
-		fpsc.Text = text.New(fpsc.Position, text.NewAtlas(basicfont.Face7x13, text.ASCII))
-	}
-
 	fpsc.Text.Clear()
 
 	fmt.Fprintln(fpsc.Text, len(fpsc.FrameTimes))

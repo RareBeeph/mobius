@@ -194,6 +194,6 @@ var S2CollisionIndicator = Scene2.AddChild(&types.Button{ColoredRect: types.Colo
 
 var S2ClickIndicator = Scene2.AddChild(&types.Button{ColoredRect: types.ColoredRect{Color: pixel.RGB(0, 0, 0)}})
 
-var S2FpsCounter = Scene2.AddChild(&types.FpsCounter{Position: pixel.V(100, 100)})
+var S2FpsCounter = Scene2.AddChild(types.NewFpsCounter(pixel.V(100, 100)))
 
 var metric [3][3]float64

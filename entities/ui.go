@@ -26,7 +26,7 @@ func Initialize(win *pixelgl.Window, clicked *types.Event) {
 		ClickIndicator.Bounds = pixel.R(0, 10, 10, 20)
 	}
 
-	(*Scene).Children = []types.EI{&SaveButton, &ClickIndicator, &CollisionIndicator, &ControlRects[0], &ControlRects[1], TestRects[0], TestRects[1], &SceneButton, &FpsC, Graph}
+	(*Scene).Children = []types.EI{&SaveButton, &ClickIndicator, &CollisionIndicator, &ControlRects[0], &ControlRects[1], TestRects[0], TestRects[1], &SceneButton, FpsC, Graph}
 
 	allButtons := []types.CRI{&SaveButton, &ClickIndicator, &CollisionIndicator, &ControlRects[0], &ControlRects[1], TestRects[0], TestRects[1], &SceneButton}
 	CollisionIndicator.OnEvent = func(e *types.Event) {
@@ -44,7 +44,7 @@ func Initialize(win *pixelgl.Window, clicked *types.Event) {
 		CollisionIndicator.Color.A = 0
 	}
 
-	AllTexts = []*types.FpsCounter{&FpsC}
+	AllTexts = []*types.FpsCounter{FpsC}
 
 	copy(Graph.BasisMatrix[:], types.DefaultBasisMatrix[:])
 	Graph.UpdateFunc = func(dt time.Duration) {
@@ -69,7 +69,7 @@ var Graph = &types.CurveDisplay{
 var ClickIndicator = types.Button{ColoredRect: types.ColoredRect{Color: pixel.RGB(0, 0, 0)}}
 var CollisionIndicator = types.Button{ColoredRect: types.ColoredRect{Bounds: pixel.R(0, 0, 10, 10), Color: pixel.RGB(0, 1, 0)}}
 
-var FpsC = types.FpsCounter{Position: pixel.V(100, 100)}
+var FpsC = types.NewFpsCounter(pixel.V(100, 100))
 
 var SaveButton = types.Button{
 	ColoredRect: types.ColoredRect{Bounds: pixel.R(400, 400, 700, 600), Color: pixel.RGB(0.8, 0.8, 0.8)},
