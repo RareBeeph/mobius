@@ -180,12 +180,13 @@ var MetricSaveButton = Scene2.AddChild(&types.Button{
 	OnEvent: func(e *types.Event) {
 		m := query.Metric
 
-		a := model.NewMetricFromArray(metric)
-		m.Create(&a)
+		a := model.NewMetricFromArray(metric, *model.NewColorFromRgba(ControlColor))
+		m.Save(&a)
 
 		//Debug
-		b, _ := m.Last()
-		log.Printf("ID: %d, RR: %f, GG: %f, BB: %f, RG: %f, RB: %f, GB: %f", b.ID, b.RedSquared, b.GreenSquared, b.BlueSquared, b.RedDotGreen, b.RedDotBlue, b.GreenDotBlue)
+		b, _ := m.Preload(m.ControlColor).Last()
+		log.Printf("ID: %d, RR: %f, GG: %f, BB: %f, RG: %f, RB: %f, GB: %f, CID: %d", b.ID, b.RedSquared, b.GreenSquared, b.BlueSquared, b.RedDotGreen, b.RedDotBlue, b.GreenDotBlue, b.ControlColor.ID)
+		log.Printf("ID: %d, R: %f, G: %f, B: %f", b.ControlColor.ID, b.ControlColor.R, b.ControlColor.G, b.ControlColor.B)
 	},
 	Label: "Save metric to database",
 })
