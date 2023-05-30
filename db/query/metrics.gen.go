@@ -31,15 +31,16 @@ func newMetric(db *gorm.DB, opts ...gen.DOOption) metric {
 	_metric.CreatedAt = field.NewTime(tableName, "created_at")
 	_metric.UpdatedAt = field.NewTime(tableName, "updated_at")
 	_metric.DeletedAt = field.NewField(tableName, "deleted_at")
+	_metric.R = field.NewFloat64(tableName, "r")
+	_metric.G = field.NewFloat64(tableName, "g")
+	_metric.B = field.NewFloat64(tableName, "b")
+	_metric.A = field.NewFloat64(tableName, "a")
 	_metric.RedSquared = field.NewFloat64(tableName, "red_squared")
 	_metric.GreenSquared = field.NewFloat64(tableName, "green_squared")
 	_metric.BlueSquared = field.NewFloat64(tableName, "blue_squared")
 	_metric.RedDotGreen = field.NewFloat64(tableName, "red_dot_green")
 	_metric.RedDotBlue = field.NewFloat64(tableName, "red_dot_blue")
 	_metric.GreenDotBlue = field.NewFloat64(tableName, "green_dot_blue")
-	_metric.ControlR = field.NewFloat64(tableName, "control_r")
-	_metric.ControlG = field.NewFloat64(tableName, "control_g")
-	_metric.ControlB = field.NewFloat64(tableName, "control_b")
 
 	_metric.fillFieldMap()
 
@@ -54,15 +55,16 @@ type metric struct {
 	CreatedAt    field.Time
 	UpdatedAt    field.Time
 	DeletedAt    field.Field
+	R            field.Float64
+	G            field.Float64
+	B            field.Float64
+	A            field.Float64
 	RedSquared   field.Float64
 	GreenSquared field.Float64
 	BlueSquared  field.Float64
 	RedDotGreen  field.Float64
 	RedDotBlue   field.Float64
 	GreenDotBlue field.Float64
-	ControlR     field.Float64
-	ControlG     field.Float64
-	ControlB     field.Float64
 
 	fieldMap map[string]field.Expr
 }
@@ -83,15 +85,16 @@ func (m *metric) updateTableName(table string) *metric {
 	m.CreatedAt = field.NewTime(table, "created_at")
 	m.UpdatedAt = field.NewTime(table, "updated_at")
 	m.DeletedAt = field.NewField(table, "deleted_at")
+	m.R = field.NewFloat64(table, "r")
+	m.G = field.NewFloat64(table, "g")
+	m.B = field.NewFloat64(table, "b")
+	m.A = field.NewFloat64(table, "a")
 	m.RedSquared = field.NewFloat64(table, "red_squared")
 	m.GreenSquared = field.NewFloat64(table, "green_squared")
 	m.BlueSquared = field.NewFloat64(table, "blue_squared")
 	m.RedDotGreen = field.NewFloat64(table, "red_dot_green")
 	m.RedDotBlue = field.NewFloat64(table, "red_dot_blue")
 	m.GreenDotBlue = field.NewFloat64(table, "green_dot_blue")
-	m.ControlR = field.NewFloat64(table, "control_r")
-	m.ControlG = field.NewFloat64(table, "control_g")
-	m.ControlB = field.NewFloat64(table, "control_b")
 
 	m.fillFieldMap()
 
@@ -108,20 +111,21 @@ func (m *metric) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 }
 
 func (m *metric) fillFieldMap() {
-	m.fieldMap = make(map[string]field.Expr, 13)
+	m.fieldMap = make(map[string]field.Expr, 14)
 	m.fieldMap["id"] = m.ID
 	m.fieldMap["created_at"] = m.CreatedAt
 	m.fieldMap["updated_at"] = m.UpdatedAt
 	m.fieldMap["deleted_at"] = m.DeletedAt
+	m.fieldMap["r"] = m.R
+	m.fieldMap["g"] = m.G
+	m.fieldMap["b"] = m.B
+	m.fieldMap["a"] = m.A
 	m.fieldMap["red_squared"] = m.RedSquared
 	m.fieldMap["green_squared"] = m.GreenSquared
 	m.fieldMap["blue_squared"] = m.BlueSquared
 	m.fieldMap["red_dot_green"] = m.RedDotGreen
 	m.fieldMap["red_dot_blue"] = m.RedDotBlue
 	m.fieldMap["green_dot_blue"] = m.GreenDotBlue
-	m.fieldMap["control_r"] = m.ControlR
-	m.fieldMap["control_g"] = m.ControlG
-	m.fieldMap["control_b"] = m.ControlB
 }
 
 func (m metric) clone(db *gorm.DB) metric {

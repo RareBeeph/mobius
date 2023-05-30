@@ -180,11 +180,11 @@ var MetricSaveButton = Scene2.AddChild(&types.Button{
 	OnEvent: func(e *types.Event) {
 		m := query.Metric
 
-		a := model.NewMetricFromArray(metric, *model.NewColorFromRgba(ControlColor))
+		a := model.NewMetricFromArray(metric, ControlColor)
 
 		// Slightly janky (float64 equality checking!!!) hack to make entries with non-unique control colors update instead of create
 		// There's probably something I could do with unique indexes or something to get the same effect, but this was easier
-		info, _ := m.Where(m.ControlR.Eq(a.ControlR), m.ControlG.Eq(a.ControlG), m.ControlB.Eq(a.ControlB)).Updates(a)
+		info, _ := m.Where(m.R.Eq(a.R), m.G.Eq(a.G), m.B.Eq(a.B)).Updates(a)
 		if info.RowsAffected == 0 {
 			m.Save(&a)
 		}
@@ -192,7 +192,7 @@ var MetricSaveButton = Scene2.AddChild(&types.Button{
 		//Debug
 		b, _ := m.Last()
 		log.Printf("ID: %d, RR: %f, GG: %f, BB: %f, RG: %f, RB: %f, GB: %f", b.ID, b.RedSquared, b.GreenSquared, b.BlueSquared, b.RedDotGreen, b.RedDotBlue, b.GreenDotBlue)
-		log.Printf("Color:: R: %f, G: %f, B: %f", b.ControlR, b.ControlG, b.ControlB)
+		log.Printf("Color:: R: %f, G: %f, B: %f", b.R, b.G, b.B)
 	},
 	Label: "Save metric to database",
 })

@@ -58,6 +58,7 @@ func measureMetric(i int, j int, timesLooped int) {
 		lengths[i][j] *= float64(timesLooped)
 		if i == 0 && j == 0 {
 			// length of red in terms of gray (Gy/R), as reciprocal of length of gray in terms of red (R/Gy)
+			// TODO: Handle when red distance is 0. This will always snap lengths[0][0] to Inf.
 			lengths[i][j] += math.Abs(coloroffset / (S2Slider.(*types.Slider).Color.R - S2ControlColor.(*types.ColoredRect).Color.R))
 
 			// revert control color. probably doable just by setting to the first control color
