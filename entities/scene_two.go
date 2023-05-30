@@ -181,12 +181,18 @@ var MetricSaveButton = Scene2.AddChild(&types.Button{
 		m := query.Metric
 
 		a := model.NewMetricFromArray(metric, *model.NewColorFromRgba(ControlColor))
-		m.Save(&a)
+
+		// Slightly janky (float64 equality checking!!!) hack to make entries with non-unique control colors update instead of create
+		// There's probably something I could do with unique indexes or something to get the same effect, but this was easier
+		info, _ := m.Where(m.ControlR.Eq(a.ControlR), m.ControlG.Eq(a.ControlG), m.ControlB.Eq(a.ControlB)).Updates(a)
+		if info.RowsAffected == 0 {
+			m.Save(&a)
+		}
 
 		//Debug
-		b, _ := m.Preload(m.ControlColor).Last()
-		log.Printf("ID: %d, RR: %f, GG: %f, BB: %f, RG: %f, RB: %f, GB: %f, CID: %d", b.ID, b.RedSquared, b.GreenSquared, b.BlueSquared, b.RedDotGreen, b.RedDotBlue, b.GreenDotBlue, b.ControlColor.ID)
-		log.Printf("ID: %d, R: %f, G: %f, B: %f", b.ControlColor.ID, b.ControlColor.R, b.ControlColor.G, b.ControlColor.B)
+		b, _ := m.Last()
+		log.Printf("ID: %d, RR: %f, GG: %f, BB: %f, RG: %f, RB: %f, GB: %f", b.ID, b.RedSquared, b.GreenSquared, b.BlueSquared, b.RedDotGreen, b.RedDotBlue, b.GreenDotBlue)
+		log.Printf("Color:: R: %f, G: %f, B: %f", b.ControlR, b.ControlG, b.ControlB)
 	},
 	Label: "Save metric to database",
 })

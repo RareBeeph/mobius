@@ -37,12 +37,9 @@ func newMetric(db *gorm.DB, opts ...gen.DOOption) metric {
 	_metric.RedDotGreen = field.NewFloat64(tableName, "red_dot_green")
 	_metric.RedDotBlue = field.NewFloat64(tableName, "red_dot_blue")
 	_metric.GreenDotBlue = field.NewFloat64(tableName, "green_dot_blue")
-	_metric.ControlID = field.NewInt(tableName, "control_id")
-	_metric.ControlColor = metricBelongsToControlColor{
-		db: db.Session(&gorm.Session{}),
-
-		RelationField: field.NewRelation("ControlColor", "model.Color"),
-	}
+	_metric.ControlR = field.NewFloat64(tableName, "control_r")
+	_metric.ControlG = field.NewFloat64(tableName, "control_g")
+	_metric.ControlB = field.NewFloat64(tableName, "control_b")
 
 	_metric.fillFieldMap()
 
@@ -63,8 +60,9 @@ type metric struct {
 	RedDotGreen  field.Float64
 	RedDotBlue   field.Float64
 	GreenDotBlue field.Float64
-	ControlID    field.Int
-	ControlColor metricBelongsToControlColor
+	ControlR     field.Float64
+	ControlG     field.Float64
+	ControlB     field.Float64
 
 	fieldMap map[string]field.Expr
 }
@@ -91,7 +89,9 @@ func (m *metric) updateTableName(table string) *metric {
 	m.RedDotGreen = field.NewFloat64(table, "red_dot_green")
 	m.RedDotBlue = field.NewFloat64(table, "red_dot_blue")
 	m.GreenDotBlue = field.NewFloat64(table, "green_dot_blue")
-	m.ControlID = field.NewInt(table, "control_id")
+	m.ControlR = field.NewFloat64(table, "control_r")
+	m.ControlG = field.NewFloat64(table, "control_g")
+	m.ControlB = field.NewFloat64(table, "control_b")
 
 	m.fillFieldMap()
 
@@ -108,7 +108,7 @@ func (m *metric) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 }
 
 func (m *metric) fillFieldMap() {
-	m.fieldMap = make(map[string]field.Expr, 12)
+	m.fieldMap = make(map[string]field.Expr, 13)
 	m.fieldMap["id"] = m.ID
 	m.fieldMap["created_at"] = m.CreatedAt
 	m.fieldMap["updated_at"] = m.UpdatedAt
@@ -119,8 +119,9 @@ func (m *metric) fillFieldMap() {
 	m.fieldMap["red_dot_green"] = m.RedDotGreen
 	m.fieldMap["red_dot_blue"] = m.RedDotBlue
 	m.fieldMap["green_dot_blue"] = m.GreenDotBlue
-	m.fieldMap["control_id"] = m.ControlID
-
+	m.fieldMap["control_r"] = m.ControlR
+	m.fieldMap["control_g"] = m.ControlG
+	m.fieldMap["control_b"] = m.ControlB
 }
 
 func (m metric) clone(db *gorm.DB) metric {
@@ -131,77 +132,6 @@ func (m metric) clone(db *gorm.DB) metric {
 func (m metric) replaceDB(db *gorm.DB) metric {
 	m.metricDo.ReplaceDB(db)
 	return m
-}
-
-type metricBelongsToControlColor struct {
-	db *gorm.DB
-
-	field.RelationField
-}
-
-func (a metricBelongsToControlColor) Where(conds ...field.Expr) *metricBelongsToControlColor {
-	if len(conds) == 0 {
-		return &a
-	}
-
-	exprs := make([]clause.Expression, 0, len(conds))
-	for _, cond := range conds {
-		exprs = append(exprs, cond.BeCond().(clause.Expression))
-	}
-	a.db = a.db.Clauses(clause.Where{Exprs: exprs})
-	return &a
-}
-
-func (a metricBelongsToControlColor) WithContext(ctx context.Context) *metricBelongsToControlColor {
-	a.db = a.db.WithContext(ctx)
-	return &a
-}
-
-func (a metricBelongsToControlColor) Session(session *gorm.Session) *metricBelongsToControlColor {
-	a.db = a.db.Session(session)
-	return &a
-}
-
-func (a metricBelongsToControlColor) Model(m *model.Metric) *metricBelongsToControlColorTx {
-	return &metricBelongsToControlColorTx{a.db.Model(m).Association(a.Name())}
-}
-
-type metricBelongsToControlColorTx struct{ tx *gorm.Association }
-
-func (a metricBelongsToControlColorTx) Find() (result *model.Color, err error) {
-	return result, a.tx.Find(&result)
-}
-
-func (a metricBelongsToControlColorTx) Append(values ...*model.Color) (err error) {
-	targetValues := make([]interface{}, len(values))
-	for i, v := range values {
-		targetValues[i] = v
-	}
-	return a.tx.Append(targetValues...)
-}
-
-func (a metricBelongsToControlColorTx) Replace(values ...*model.Color) (err error) {
-	targetValues := make([]interface{}, len(values))
-	for i, v := range values {
-		targetValues[i] = v
-	}
-	return a.tx.Replace(targetValues...)
-}
-
-func (a metricBelongsToControlColorTx) Delete(values ...*model.Color) (err error) {
-	targetValues := make([]interface{}, len(values))
-	for i, v := range values {
-		targetValues[i] = v
-	}
-	return a.tx.Delete(targetValues...)
-}
-
-func (a metricBelongsToControlColorTx) Clear() error {
-	return a.tx.Clear()
-}
-
-func (a metricBelongsToControlColorTx) Count() int64 {
-	return a.tx.Count()
 }
 
 type metricDo struct{ gen.DO }
