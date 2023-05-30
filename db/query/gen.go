@@ -16,44 +16,34 @@ import (
 )
 
 var (
-	Q        = new(Query)
-	Color    *color
-	Metric   *metric
-	Midpoint *midpoint
+	Q      = new(Query)
+	Metric *metric
 )
 
 func SetDefault(db *gorm.DB, opts ...gen.DOOption) {
 	*Q = *Use(db, opts...)
-	Color = &Q.Color
 	Metric = &Q.Metric
-	Midpoint = &Q.Midpoint
 }
 
 func Use(db *gorm.DB, opts ...gen.DOOption) *Query {
 	return &Query{
-		db:       db,
-		Color:    newColor(db, opts...),
-		Metric:   newMetric(db, opts...),
-		Midpoint: newMidpoint(db, opts...),
+		db:     db,
+		Metric: newMetric(db, opts...),
 	}
 }
 
 type Query struct {
 	db *gorm.DB
 
-	Color    color
-	Metric   metric
-	Midpoint midpoint
+	Metric metric
 }
 
 func (q *Query) Available() bool { return q.db != nil }
 
 func (q *Query) clone(db *gorm.DB) *Query {
 	return &Query{
-		db:       db,
-		Color:    q.Color.clone(db),
-		Metric:   q.Metric.clone(db),
-		Midpoint: q.Midpoint.clone(db),
+		db:     db,
+		Metric: q.Metric.clone(db),
 	}
 }
 
@@ -67,24 +57,18 @@ func (q *Query) WriteDB() *Query {
 
 func (q *Query) ReplaceDB(db *gorm.DB) *Query {
 	return &Query{
-		db:       db,
-		Color:    q.Color.replaceDB(db),
-		Metric:   q.Metric.replaceDB(db),
-		Midpoint: q.Midpoint.replaceDB(db),
+		db:     db,
+		Metric: q.Metric.replaceDB(db),
 	}
 }
 
 type queryCtx struct {
-	Color    IColorDo
-	Metric   IMetricDo
-	Midpoint IMidpointDo
+	Metric IMetricDo
 }
 
 func (q *Query) WithContext(ctx context.Context) *queryCtx {
 	return &queryCtx{
-		Color:    q.Color.WithContext(ctx),
-		Metric:   q.Metric.WithContext(ctx),
-		Midpoint: q.Midpoint.WithContext(ctx),
+		Metric: q.Metric.WithContext(ctx),
 	}
 }
 

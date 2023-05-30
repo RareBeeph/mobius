@@ -24,3 +24,7 @@ func NewMetricFromArray(a [3][3]float64, c pixel.RGBA) (out Metric) {
 
 	return out
 }
+
+var AllModels = []interface{}{
+	Metric{},
+}

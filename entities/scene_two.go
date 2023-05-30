@@ -6,21 +6,12 @@ import (
 	"colorspacer/types"
 	"log"
 	"math"
+	"math/rand"
 	"time"
 
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/pixelgl"
 )
-
-func SwitchToSceneTwo(win *pixelgl.Window, clicked *types.Event) {
-	if !sceneTwoInitialized {
-		InitSceneTwo(win, clicked)
-		sceneTwoInitialized = true
-	}
-
-	*Scene1 = *Scene
-	*Scene = *Scene2
-}
 
 func InitSceneTwo(win *pixelgl.Window, clicked *types.Event) {
 	metric[0][0] = 1
@@ -72,19 +63,14 @@ func InitSceneTwo(win *pixelgl.Window, clicked *types.Event) {
 	measureMetric(0, 0, 0) // Sets S2Control2.Color, S2Control3.Color, and ProgressButton.OnEvent
 }
 
-var sceneTwoInitialized = false
-var Scene1 = &types.Entity{}
 var Scene2 = &types.Entity{}
 
 var ControlColor = chooseControlColor().Scaled(0.8).Add(pixel.RGB(0.1, 0.1, 0.1))
 
-var SceneReturnButton = Scene2.AddChild(&types.Button{
-	ColoredRect: types.ColoredRect{Bounds: pixel.R(800, 450, 950, 550), Color: pixel.RGB(0.6, 0.6, 0.6)},
-	Label:       "Return to scene 1",
-	OnEvent: func(e *types.Event) {
-		*Scene = *Scene1
-	},
-})
+func chooseControlColor() pixel.RGBA {
+	rand.Seed(time.Now().UnixMicro()) // Temp until I figure out why rand isn't being random without this here
+	return pixel.RGB(rand.Float64(), rand.Float64(), rand.Float64())
+}
 
 var S2TestColor = Scene2.AddChild(&types.ColoredRect{
 	Bounds: pixel.R(400, 200, 500, 300),
@@ -151,10 +137,8 @@ var MetricLogger = Scene2.AddChild(&types.Button{
 })
 
 var MetricGraph = Scene2.AddChild(&types.MetricDisplay{
-	CurveDisplay: types.CurveDisplay{
-		Center: pixel.V(150, 500),
-		Bounds: pixel.R(50, 400, 250, 600),
-	},
+	Center:          pixel.V(150, 500),
+	Bounds:          pixel.R(50, 400, 250, 600),
 	ColorOffset:     coloroffset,
 	CenterCol:       ControlColor,
 	CenterDepth:     375,
