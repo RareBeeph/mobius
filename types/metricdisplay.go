@@ -68,13 +68,14 @@ func (d *MetricDisplay) Draw(window *pixelgl.Window) {
 				d.surface.Color = c
 
 				// Position of the point determined by basis matrix
+				// TODO: Make this perspective (parallel as a special case of inf distance)
 				p, depth := d.ProjectParallel(c.Sub(d.CenterCol).Scaled(1 / (3 * d.ColorOffset)))
 				p = p.Scaled(1 / max)
 				depth /= max
 				d.surface.Push(d.Center.Add(p))
 
-				// TODO: set camera distance dynamically
 				// Note: behaves poorly when center depth and point depth are too similar.
+				// TODO: Use trig to determine size as if the points are spheres
 				d.surface.Circle(d.CenterDepth*d.ThicknessFactor/(d.CenterDepth-depth), 0)
 				axialDistance += sampleoffset
 			}
@@ -146,7 +147,7 @@ func (d *MetricDisplay) Handle(delta *Event) {
 
 	rotVec[2] = math.Sqrt(1 - rotVec[0]*rotVec[0] - rotVec[1]*rotVec[1])
 
-	// Rotate with rotor based on 0,0,1 wedge rotVec
+	// Rotate with rotor based on 0,0,1 * rotVec
 	for i := range [3]bool{} {
 		rotatedMatrix[0][i] = -rotVec[0]*rotVec[0]*d.BasisMatrix[0][i] + rotVec[1]*rotVec[1]*d.BasisMatrix[0][i] + rotVec[2]*rotVec[2]*d.BasisMatrix[0][i] - 2*rotVec[0]*rotVec[1]*d.BasisMatrix[1][i] + 2*rotVec[0]*rotVec[2]*d.BasisMatrix[2][i]
 		rotatedMatrix[1][i] = rotVec[0]*rotVec[0]*d.BasisMatrix[1][i] - rotVec[1]*rotVec[1]*d.BasisMatrix[1][i] + rotVec[2]*rotVec[2]*d.BasisMatrix[1][i] - 2*rotVec[0]*rotVec[1]*d.BasisMatrix[0][i] + 2*rotVec[1]*rotVec[2]*d.BasisMatrix[2][i]
@@ -166,7 +167,7 @@ func (d *MetricDisplay) Speen(delta *Event) {
 	rotVec[1] = math.Cos(delta.MouseVel.X / 100)
 	rotVec[2] = 0
 
-	// Rotate with rotor based on 0,1,0 wedge rotVec
+	// Rotate with rotor based on 0,1,0 * rotVec
 	// TODO: generalize this as its own function so it's not nearly-repeated from Handle()
 	for i := range [3]bool{} {
 		rotatedMatrix[0][i] = -rotVec[0]*rotVec[0]*d.BasisMatrix[0][i] + rotVec[1]*rotVec[1]*d.BasisMatrix[0][i] + rotVec[2]*rotVec[2]*d.BasisMatrix[0][i] + 2*rotVec[0]*rotVec[1]*d.BasisMatrix[1][i] - 2*rotVec[0]*rotVec[2]*d.BasisMatrix[2][i]
