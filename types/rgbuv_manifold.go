@@ -53,7 +53,7 @@ func SlopesOfMetric(metric [3][3]float64) (out slopes) {
 
 		plug into the first ellipse equation and solve for dvdB in terms of the metric components--take the positive branch sqrt
 	*/
-	metric = metricScale(metric, 10)
+	metric = metricScale(metric, 100) // Scale up to ensure a valid unprojection. Shouldn't affect local relationships.
 
 	// 0 = (1 - metric[0][0])*dvdG^2 + 2*metric[0][1]*dvdR*dvdG + (1 - metric[1][1])*dvdR^2 + (1 - metric[0][0])*(1 - metric[1][1]) - metric[0][1]^2
 	c11 := 1 - metric[0][0]
@@ -82,26 +82,113 @@ func SlopesOfMetric(metric [3][3]float64) (out slopes) {
 	c52 := 2*c43*c41 - c3*math.Pow(c42, 2)     // dvdB^2 coeff
 	c53 := math.Pow(c43, 2)                    // constant
 
-	out.dvdB = math.Sqrt((-c52 + math.Sqrt(math.Pow(c52, 2)-4*c51*c53)) / (2 * c51)) // quadratic formula on eq. 5
-	out.dvdR = c21*out.dvdB + c22*math.Sqrt(c3-math.Pow(out.dvdB, 2))                // eq.2
-	out.dvdG = c31*out.dvdB + c32*math.Sqrt(c3-math.Pow(out.dvdB, 2))                // eq.3
-	out.dudR = math.Sqrt(metric[0][0] - 1 - math.Pow(out.dvdR, 2))                   // definition of R'
-	out.dudG = math.Sqrt(metric[1][1] - 1 - math.Pow(out.dvdG, 2))                   // definition of G'
-	out.dudB = math.Sqrt(metric[2][2] - 1 - math.Pow(out.dvdB, 2))                   // definition of B'
+	// condition logic time. we gotta pick the right branches of the sqrts.
+
+	// setting up a quadratic equation for the metric[0][2] values at which the outer phase changes occur
+	d1 := (metric[1][1] - 1) / (metric[2][2] - 1)                                                                                     // metric[0][2]^2 coeff
+	d2 := 2 * metric[0][1] * math.Sqrt((metric[1][1]-1)*(metric[2][2]-1)-math.Pow(metric[1][2], 2)) / (metric[2][2] - 1)              // sqrt(d3 - metric[0][2]^2) coeff
+	d3 := (metric[2][2] - 1) * (metric[0][0] - 1)                                                                                     // internal value in the sqrt; acts as a radius^2 term
+	d4 := (metric[0][0]-1)*math.Pow(metric[1][2], 2)/(metric[2][2]-1) - (metric[0][0]-1)*(metric[1][1]-1) - math.Pow(metric[0][1], 2) // constant
+
+	log.Printf("d: %f, %f, %f, %f", d1, d2, d3, d4)
+
+	// rearrange and square the above to get a quadratic of metric[0][2]^2
+	d21 := math.Pow(d1, 2)                      // metric[0][2]^4 coeff
+	d22 := math.Pow(d2, 2) + 2*d1*d4            // metric[0][2]^2 coeff
+	d23 := math.Pow(d4, 2) - math.Pow(d2, 2)*d3 // constant
+
+	log.Printf("d2: %f, %f, %f", d21, d22, d23)
+
+	// set up a quadratic equation in terms of metric[1][2] for when the lowest phase change occurs at metric[0][2] == 0
+	d31 := math.Pow(metric[0][0]-1, 2) / math.Pow(metric[2][2]-1, 2)                                                                                           // metric[1][2]^4 coeff
+	d32 := -2*math.Pow(metric[0][0]-1, 2)*(metric[1][1]-1)/(metric[2][2]-1) + 2*(metric[0][0]-1)*math.Pow(metric[0][1], 2)/(metric[2][2]-1)                    // metric[1][2]^2 coeff
+	d33 := math.Pow(metric[0][0]-1, 2)*math.Pow(metric[1][1]-1, 2) + math.Pow(metric[0][1], 4) - 2*math.Pow(metric[0][1], 2)*(metric[0][0]-1)*(metric[1][1]-1) // constant
+
+	log.Printf("d3: %f, %f, %f", d31, d32, d33)
+
+	// quadratic formula of above, compared with metric[1][2]. controls the sign of the sqrt for metric[0][2]
+	bouncer := math.Copysign(1, -metric[1][2]*math.Copysign(1, metric[0][1])-math.Sqrt((-d32+math.Sqrt(math.Pow(d32, 2)-4*d31*d33))/(2*d31)))
+
+	log.Printf("bouncer: %f", bouncer)
+
+	// quadratic formula of d21 through d23
+	lowerphase := math.Sqrt((-d22+math.Copysign(1, metric[0][1]*metric[1][2])*math.Sqrt(math.Pow(d22, 2)-4*d21*d23))/(2*d21)) * bouncer
+	upperphase := -lowerphase
+
+	// simplified from an expression of c42 by exploiting invariance
+	middlephase := -metric[1][2] * math.Sqrt((metric[0][0]-1)/(metric[1][1]-1))
+
+	log.Printf("phases: %f, %f, %f", lowerphase, middlephase, upperphase)
+
+	z := math.Sqrt((-c52 + math.Sqrt(math.Pow(c52, 2)-4*c51*c53)) / (2 * c51))  // quadratic formula on eq. 5
+	z2 := math.Sqrt((-c52 - math.Sqrt(math.Pow(c52, 2)-4*c51*c53)) / (2 * c51)) // negative branch of inner sqrt
+	offset := math.Sqrt(c3 - math.Pow(z, 2))
+	offset2 := math.Sqrt(c3 - math.Pow(z2, 2))
+
+	log.Printf("calculations: %f, %f, %f, %f", z, z2, offset, offset2)
+
+	// this expression represents the value of metric[1][2] at which the outer phase changes occur at the maximum magnitude of metric[0][2]
+	// metric[1][2] being above it or below it determines which of the lowest or the highest phase changes occurs
+	if metric[1][2] <= math.Sqrt(math.Pow(metric[0][1], 2)*(metric[2][2]-1)/(metric[0][0]-1)) {
+		if metric[0][2] <= lowerphase {
+			log.Println("black")
+			out.dvdR = -c21*z2 + c22*offset2 // eq.2
+			out.dvdG = -c31*z2 + c32*offset2 // eq.3
+			out.dvdB = z2
+		} else if metric[0][2] <= middlephase {
+			log.Println("blackside red")
+			// positive branch of z2 outer sqrt
+			out.dvdR = c21*z2 + c22*offset2
+			out.dvdG = c31*z2 + c32*offset2
+			out.dvdB = z2
+		} else {
+			log.Println("blackside orange")
+			// positive branch of z inner sqrt as well
+			out.dvdR = c21*z + c22*offset
+			out.dvdG = c31*z + c32*offset
+			out.dvdB = z
+		}
+	} else {
+		if metric[0][2] <= middlephase {
+			log.Println("greenside red")
+			// same equations as the middle section of the metric[1][2] <= case, but without a lowest phase interfering
+			out.dvdR = c21*z2 + c22*offset2
+			out.dvdG = c31*z2 + c32*offset2
+			out.dvdB = z2
+		} else if metric[0][2] <= upperphase {
+			log.Println("greenside orange")
+			// same equations as the final section of the metric[1][2] <= case, but with a highest phase interfering
+			out.dvdR = c21*z + c22*offset
+			out.dvdG = c31*z + c32*offset
+			out.dvdB = z
+		} else {
+			log.Println("green")
+			// negative branch of offset outer sqrt
+			out.dvdR = c21*z - c22*offset
+			out.dvdG = c31*z - c32*offset
+			out.dvdB = z
+		}
+	}
+
+	// currently uncooperative--these need to have their signs constrained, but sometimes the constraints are unsatisfiable!
+	out.dudR = math.Sqrt(metric[0][0] - 1 - math.Pow(out.dvdR, 2)) // definition of R'
+	out.dudG = math.Sqrt(metric[1][1] - 1 - math.Pow(out.dvdG, 2)) // definition of G'
+	out.dudB = math.Sqrt(metric[2][2] - 1 - math.Pow(out.dvdB, 2)) // definition of B'
 
 	// debug
 	var test [3][3]float64
 	test[0][0] = 1 + math.Pow(out.dudR, 2) + math.Pow(out.dvdR, 2)
 	test[1][1] = 1 + math.Pow(out.dudG, 2) + math.Pow(out.dvdG, 2)
 	test[2][2] = 1 + math.Pow(out.dudB, 2) + math.Pow(out.dvdB, 2)
-	test[0][1] = -out.dudR*out.dudG + out.dvdR*out.dvdG
+	test[0][1] = out.dudR*out.dudG + out.dvdR*out.dvdG
 	test[1][0] = test[0][1]
-	test[0][2] = -out.dudR*out.dudB + out.dvdR*out.dvdB
+	test[0][2] = out.dudR*out.dudB + out.dvdR*out.dvdB
 	test[2][0] = test[0][2]
-	test[1][2] = -out.dudG*out.dudB + out.dvdG*out.dvdB
+	test[1][2] = out.dudG*out.dudB + out.dvdG*out.dvdB
 	test[2][1] = test[1][2]
 	log.Println(metric)
 	log.Println(test)
+	log.Printf("%f, %f, %f, %f, %f, %f", out.dudR, out.dudG, out.dudB, out.dvdR, out.dvdG, out.dvdB)
 
 	return out
 }
