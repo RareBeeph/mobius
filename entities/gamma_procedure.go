@@ -1,0 +1,5 @@
+package entities
+
+func measureGamma() {
+
+}

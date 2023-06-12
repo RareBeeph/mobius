@@ -31,7 +31,7 @@ func measureMetric(i int, j int, timesLooped int) {
 		timesLooped++
 
 		// debug
-		types.SlopesOfMetric(metric)
+		// types.SlopesOfMetric(metric)
 	} else if i > 2 || j > 2 {
 		log.Println("Excessive arguments given to g(i,j); this should never happen")
 	}
