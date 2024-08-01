@@ -1,25 +1,14 @@
 package main
 
 import (
-	"colorspacer/db"
-	"colorspacer/db/model"
-	"colorspacer/db/query"
 	"colorspacer/entities"
 	"colorspacer/types"
 
-	"math/rand"
 	"time"
 
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/pixelgl"
 )
-
-func init() {
-	query.SetDefault(db.Connection)
-	db.Connection.AutoMigrate(model.AllModels...)
-
-	rand.Seed(time.Now().UnixMicro())
-}
 
 func main() {
 	pixelgl.Run(run)
@@ -28,7 +17,7 @@ func main() {
 func run() {
 	cfg := pixelgl.WindowConfig{
 		Title:  "test",
-		Bounds: pixel.R(0, 0, 1024, 768),
+		Bounds: pixel.R(0, 0, 500, 450),
 		VSync:  true,
 	}
 	win, err := pixelgl.NewWindow(cfg)
@@ -40,9 +29,8 @@ func run() {
 	var delta = types.Event{EventType: types.Drag}
 
 	entities.InitSceneTwo(win, &clicked) // pixelgl had to Run() to initialize a window to initialize entities
-	entities.InitSceneGrays()
 
-	defaultDispatch := Dispatch{Entities: []types.EI{entities.SceneGrays}}
+	defaultDispatch := Dispatch{Entities: []types.EI{entities.Scene2}}
 
 	thisPos := win.MousePosition()
 	var lastPos pixel.Vec

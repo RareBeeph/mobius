@@ -2,21 +2,19 @@ package types
 
 import (
 	"math"
+	"sort"
 
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/pixelgl"
 )
 
-type MetricDisplay struct {
+type MobiusDisplay struct {
 	Entity
 
 	Center      pixel.Vec
 	Bounds      pixel.Rect
 	BasisMatrix [3][3]float64
 
-	CenterCol       pixel.RGBA
-	Lengths         [3][3]float64
-	ColorOffset     float64
 	ThicknessFactor float64
 	CenterDepth     float64
 }
@@ -25,69 +23,107 @@ const sampleoffset = 0.01
 
 var DefaultBasisMatrix = [3][3]float64{{-100 * math.Sqrt(0.5), 0, 100 * math.Sqrt(0.5)}, {-100 * math.Sqrt(0.16667), 100 * math.Sqrt(0.6667), -100 * math.Sqrt(0.16667)}, {100 * math.Sqrt(0.3333), 100 * math.Sqrt(0.3333), 100 * math.Sqrt(0.3333)}}
 
-func (d *MetricDisplay) Draw(window *pixelgl.Window) {
+const size = 0.5
+
+const PI = 3.1415926535897932384626
+
+func getColor(theta float64, i float64) pixel.RGBA {
+	// theta,i in half-revolutions
+	hue := (theta + i/2) * PI
+
+	// temp
+	e1 := []float64{1 / math.Sqrt(2), -1 / math.Sqrt(2), 0}
+	e2 := []float64{math.Sqrt(2./3.) / 2., math.Sqrt(2./3.) / 2., -math.Sqrt(2. / 3.)}
+
+	rscale := 0.75
+	gscale := 0.5
+	bscale := 1.
+
+	return pixel.RGBA{
+		R: 0.5 + rscale*(e1[0]*math.Cos(hue)+e2[0]*math.Sin(hue))/2,
+		G: 0.5 + gscale*(e1[1]*math.Cos(hue)+e2[1]*math.Sin(hue))/2,
+		B: 0.5 + bscale*(e1[2]*math.Cos(hue)+e2[2]*math.Sin(hue))/2,
+		A: 1,
+	}
+}
+
+const offsetamount = 0.5
+
+func getPosition(theta float64, i float64) (pixel.Vec, float64) {
+	// theta in revolutions, i linear
+	theta *= 2 * PI
+
+	base := []float64{math.Cos(theta), math.Sin(theta), 0}
+
+	phi := theta / 2
+
+	offset := []float64{math.Cos(theta) * math.Cos(phi), math.Sin(theta) * math.Cos(phi), math.Sin(phi)}
+
+	return pixel.Vec{
+		X: size * (base[0] + i*offset[0]*offsetamount),
+		Y: size * (base[1] + i*offset[1]*offsetamount),
+	}, size * (base[2] + i*offset[2]*offsetamount)
+}
+
+func getPoint(theta float64, i float64) point {
+	a, b := getPosition(theta, i)
+	return point{col: getColor(theta, i), pos: a, depth: b}
+}
+
+func getPoint2(theta float64, i float64) point {
+	a, b := getPosition(theta, i)
+	return point{col: getColor(theta+1, -i), pos: a, depth: b}
+}
+
+var tgrain = 31.
+var Tgrain = &tgrain
+
+var igrain = 10.
+var Igrain = &igrain
+
+func (d *MobiusDisplay) Draw(window *pixelgl.Window) {
 	d.GuardSurface()
 
-	max := float64(0)
-	for i := range [3]any{} {
-		if d.Lengths[i][i] > max {
-			max = d.Lengths[i][i]
+	tgrain = math.Round(tgrain)
+	igrain = math.Round(igrain)
+
+	points := []point{}
+	points2 := []point{}
+	for i := 0; i < int(igrain); i++ {
+		for theta := 0; theta < int(tgrain); theta++ {
+			hueangle := float64(theta) / tgrain
+			offset := -1 + 2*float64(i)/(igrain-1)
+
+			p1 := getPoint(hueangle, offset)
+			p1.pos, p1.depth = d.ProjectParallel(pixel.RGBA{R: p1.pos.X, G: p1.pos.Y, B: p1.depth})
+			points = append(points, p1)
+
+			p2 := getPoint2(hueangle, offset)
+			p2.pos, p2.depth = d.ProjectParallel(pixel.RGBA{R: p2.pos.X, G: p2.pos.Y, B: p2.depth})
+			p2.pos.X += 200
+			points2 = append(points2, p2)
 		}
 	}
 
-	// Use 3*d.ColorOffset to exaggerate the visual
-	// TODO: set the exaggeration factor dynamically
-	vertexCols := []pixel.RGBA{d.CenterCol,
-		d.CenterCol.Add(pixel.RGB(3*d.ColorOffset*d.Lengths[0][0], 0, 0)),
-		d.CenterCol.Add(pixel.RGB(0, 3*d.ColorOffset*d.Lengths[1][1], 0)),
-		d.CenterCol.Add(pixel.RGB(0, 0, 3*d.ColorOffset*d.Lengths[2][2])),
+	points = PointSort(points)
+	points2 = PointSort(points2)
+
+	for _, p := range points {
+		d.surface.Color = p.col
+		d.surface.Push(d.Center.Add(p.pos))
+		d.surface.Circle(d.CenterDepth*d.ThicknessFactor/(d.CenterDepth-p.depth), 0)
 	}
 
-	// Temporarily store basis matrix (janky hack)
-	var temp [3][3]float64
-	copy(temp[:], d.BasisMatrix[:])
-
-	// Transformation determined by lengths matrix
-	d.BasisMatrix = dirtyMatrixMultiply(d.BasisMatrix, d.lengthsToMap())
-
-	for i, col := range vertexCols {
-		for j, col2 := range vertexCols {
-			// Restrict rendering to only the 6 valid and distinct unordered pairs (edges)
-			if j <= i {
-				continue
-			}
-
-			// TODO: Render failed triangle inequalities differently or not at all
-
-			axialDistance := float64(0)
-
-			// TODO: Add a depth buffer or something here
-			for axialDistance <= 1 {
-				// Color of the point determined by linear interpolation between endpoint
-				c := col.Add(col2.Sub(col).Scaled(axialDistance))
-				d.surface.Color = c
-
-				// Position of the point determined by basis matrix
-				// TODO: Make this perspective (parallel as a special case of inf distance)
-				p, depth := d.ProjectParallel(c.Sub(d.CenterCol).Scaled(1 / (3 * d.ColorOffset)))
-				p = p.Scaled(1 / max)
-				depth /= max
-				d.surface.Push(d.Center.Add(p))
-
-				// Note: behaves poorly when center depth and point depth are too similar.
-				// TODO: Use trig to determine size as if the points are spheres
-				d.surface.Circle(d.CenterDepth*d.ThicknessFactor/(d.CenterDepth-depth), 0)
-				axialDistance += sampleoffset
-			}
-		}
+	for _, p := range points2 {
+		d.surface.Color = p.col
+		d.surface.Push(d.Center.Add(p.pos))
+		d.surface.Circle(d.CenterDepth*d.ThicknessFactor/(d.CenterDepth-p.depth), 0)
 	}
-
-	copy(d.BasisMatrix[:], temp[:])
 
 	d.surface.Draw(window)
 }
 
-func (d *MetricDisplay) Handles(delta *Event) bool {
+func (d *MobiusDisplay) Handles(delta *Event) bool {
 	if delta.EventType != Drag {
 		return false
 	}
@@ -100,7 +136,7 @@ func (d *MetricDisplay) Handles(delta *Event) bool {
 	return true
 }
 
-func (d *MetricDisplay) Handle(delta *Event) {
+func (d *MobiusDisplay) Handle(delta *Event) {
 	if delta.Contains(pixelgl.KeyC) {
 		copy(d.BasisMatrix[:], DefaultBasisMatrix[:])
 		return
@@ -157,7 +193,7 @@ func (d *MetricDisplay) Handle(delta *Event) {
 	d.BasisMatrix = rotatedMatrix
 }
 
-func (d *MetricDisplay) Speen(delta *Event) {
+func (d *MobiusDisplay) Speen(delta *Event) {
 	rotatedMatrix := [3][3]float64{}
 	copy(rotatedMatrix[:], d.BasisMatrix[:])
 
@@ -178,7 +214,7 @@ func (d *MetricDisplay) Speen(delta *Event) {
 	d.BasisMatrix = rotatedMatrix
 }
 
-func (d *MetricDisplay) ProjectParallel(col pixel.RGBA) (out pixel.Vec, depth float64) {
+func (d *MobiusDisplay) ProjectParallel(col pixel.RGBA) (out pixel.Vec, depth float64) {
 	// Standard matrix multiplication
 	out.X = col.R*d.BasisMatrix[0][0] + col.G*d.BasisMatrix[0][1] + col.B*d.BasisMatrix[0][2]
 	out.Y = col.R*d.BasisMatrix[1][0] + col.G*d.BasisMatrix[1][1] + col.B*d.BasisMatrix[1][2]
@@ -186,62 +222,13 @@ func (d *MetricDisplay) ProjectParallel(col pixel.RGBA) (out pixel.Vec, depth fl
 	return out, depth
 }
 
-func (d *MetricDisplay) Contains(point pixel.Vec) (out bool) {
+func (d *MobiusDisplay) Contains(point pixel.Vec) (out bool) {
 	return (point.X >= d.Bounds.Min.X &&
 		point.X < d.Bounds.Max.X &&
 		point.Y >= d.Bounds.Min.Y &&
 		point.Y < d.Bounds.Max.Y)
 }
 
-func (d *MetricDisplay) lengthsToMap() (out [3][3]float64) {
-	var angles [3]float64
-
-	// TODO: this is still just copypasta from second_tc.go
-	for i, j := range [][]int{{0, 1}, {0, 2}, {1, 2}} {
-		angles[i] = math.Acos((math.Pow(d.Lengths[j[0]][j[1]], 2) - math.Pow(d.Lengths[j[0]][j[0]], 2) - math.Pow(d.Lengths[j[1]][j[1]], 2)) / (-2 * d.Lengths[j[0]][j[0]] * d.Lengths[j[1]][j[1]]))
-	}
-
-	for i := range angles {
-		if math.IsNaN(angles[i]) {
-			angles[i] = math.Pi / 2 // Safeguard to make sin and cos give reasonable values
-		}
-	}
-
-	// Arbitrarily assert that the red direction of the map is in the red direction of space
-	out[0][0] = 1
-
-	// Arbitrarily assert that the green direction of the map is in the red-green plane
-	out[0][1] = math.Cos(angles[0])
-	out[1][1] = math.Sin(angles[0])
-
-	// Calculate phase of blue based on the dot product of green and blue
-	phi := math.Acos((math.Cos(angles[2]) - math.Cos(angles[1])*math.Cos(angles[0])) / (math.Sin(angles[1]) * math.Sin(angles[0])))
-	// If that phase is NaN, the triangle inequality failed
-	if math.IsNaN(phi) {
-		phi = 0 // Safeguard
-	}
-
-	// Constrain the blue direction of the map relative to those, based on the given lengths
-	out[0][2] = math.Cos(angles[1])
-	out[1][2] = math.Sin(angles[1]) * math.Cos(phi)
-	out[2][2] = math.Sin(angles[1]) * math.Sin(phi)
-
-	return out
-}
-
-func dirtyMatrixMultiply(m1 [3][3]float64, m2 [3][3]float64) (out [3][3]float64) {
-	// Wrote this so I didn't have to figure out using a library
-	for i := range [3]any{} {
-		for j := range [3]any{} {
-			for k := range [3]any{} {
-				out[i][j] += m1[i][k] * m2[k][j]
-			}
-		}
-	}
-	return out
-}
-
-/*
 type point struct {
 	col   pixel.RGBA
 	pos   pixel.Vec
@@ -259,4 +246,3 @@ func PointSort(p []point) []point {
 
 	return sorted
 }
-*/
